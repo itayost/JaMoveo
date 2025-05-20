@@ -1,0 +1,12 @@
+# Build directories
+build/
+dist/
+coverage/
+
+# Node modules
+node_modules/
+
+# Other
+.git/
+.env
+.env.*

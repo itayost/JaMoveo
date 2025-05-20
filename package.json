@@ -1,0 +1,30 @@
+{
+  "name": "jamoveo",
+  "version": "1.0.0",
+  "description": "A real-time collaborative music rehearsal application",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "npm run lint:client && npm run lint:server",
+    "lint:client": "cd client && eslint --ext .js,.jsx src/",
+    "lint:server": "cd server && eslint .",
+    "format": "prettier --write \"**/*.{js,jsx,json,md,css}\"",
+    "lint-staged": "lint-staged"
+  },
+  "keywords": [
+    "music",
+    "rehearsal",
+    "real-time",
+    "collaboration"
+  ],
+  "author": "Moveo",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.0.0",
+    "prettier": "^3.5.3"
+  }
+}

@@ -1,0 +1,25 @@
+// server/data/sampleSongs.json
+[
+  {
+    "title": "Imagine",
+    "artist": "John Lennon",
+    "language": "English",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/en/9/9e/Imagine_John_Lennon.jpg",
+    "lyrics": "Imagine there's no heaven\nIt's easy if you try\nNo hell below us\nAbove us only sky\nImagine all the people\nLiving for today...\n\nImagine there's no countries\nIt isn't hard to do\nNothing to kill or die for\nAnd no religion too\nImagine all the people\nLiving life in peace...\n\nYou may say I'm a dreamer\nBut I'm not the only one\nI hope someday you'll join us\nAnd the world will be as one\n\nImagine no possessions\nI wonder if you can\nNo need for greed or hunger\nA brotherhood of man\nImagine all the people\nSharing all the world...\n\nYou may say I'm a dreamer\nBut I'm not the only one\nI hope someday you'll join us\nAnd the world will live as one",
+    "chords": "C       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nF        Am    Dm    F\nG        C    E7  F\n\nC       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nF        Am    Dm    F\nG        C    E7  F\n\nF        Am    Dm    F\nG        C    E7  F\nF        Am    Dm    F\nG        C    E7  F\n\nC       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nC       Cmaj7  F\nF        Am    Dm    F\nG        C    E7  F\n\nF        Am    Dm    F\nG        C    E7  F\nF        Am    Dm    F\nG        C    E7  F",
+    "year": 1971,
+    "genre": "Rock",
+    "key": "C"
+  },
+  {
+    "title": "הלב שלי",
+    "artist": "עברי לידר",
+    "language": "Hebrew",
+    "imageUrl": "https://i.ytimg.com/vi/qSA6v5jrDqU/maxresdefault.jpg",
+    "lyrics": "הלב שלי בוכה בשקט\nהוא לא רוצה שאשמע\nגם כשאני רוקד\nהוא רוקד אחר\n\nאז היום אני לא אשקר\nולא אתן לו להתפזר\nהוא בעצמו יבין\nמה הייתי צריך להרגיש\n\nאז איך אני לא אפחד\nאיך אני לא אשמר\nלאן אפול כשעכשיו\nהלב שלי נשבר\nלאן אפול כשעכשיו\nהלב שלי נשבר\n\nהלב שלי בוכה בשקט\nהוא לא רוצה שאשמע\nאולי הוא רק עייף\nואולי הוא נזכר\n\nמגלה לאט לאט עוד שקר\nכמה רחוק אפשר להתפזר\nלפני שנשארים נקיים\nמהכל",
+    "chords": "Em      C        G\nEm      C        G\nAm      C        D\nEm      C        G\n\nEm      C        G\nEm      C        G\nAm      C        D\nEm      C        G\n\nC                G\nD                Em\nC        G\nEm\nC        G\nEm\n\nEm      C        G\nEm      C        G\nAm      C        D\nEm      C        G\n\nEm      C        G\nEm      C        G\nAm      C        D\nEm",
+    "year": 2017,
+    "genre": "Pop",
+    "key": "Em"
+  }
+]
