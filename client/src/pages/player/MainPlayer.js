@@ -16,15 +16,9 @@ const MainPlayer = () => {
   const navigate = useNavigate();
 
   // State
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [activeSession, setActiveSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Update connection status based on socket connection
-  useEffect(() => {
-    setConnectionStatus(connected ? 'connected' : 'connecting');
-  }, [connected]);
+  const [error, setError] = useState('');
 
   // Find and join active session
   useEffect(() => {
@@ -45,21 +39,16 @@ const MainPlayer = () => {
           // Join session via socket if connected
           if (socket && connected) {
             joinSession(session._id);
-            setConnectionStatus('connected');
-          } else {
-            setConnectionStatus('waiting');
           }
         } else {
           // No active session found
           setActiveSession(null);
-          setConnectionStatus('waiting');
         }
         
-        setErrorMessage('');
+        setError('');
       } catch (error) {
         console.error('Error joining session:', error);
-        setConnectionStatus('error');
-        setErrorMessage('Could not join rehearsal session. Please try again.');
+        setError('Could not join rehearsal session. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -88,9 +77,6 @@ const MainPlayer = () => {
 
   // Handle retry connection
   const handleRetry = async () => {
-    setConnectionStatus('connecting');
-    setLoading(true);
-    
     try {
       // Find active session
       const response = await sessionAPI.getActiveSessions(true);
@@ -100,21 +86,14 @@ const MainPlayer = () => {
         
         if (socket && connected) {
           joinSession(response.data.session._id);
-          setConnectionStatus('connected');
-        } else {
-          setConnectionStatus('waiting');
         }
       } else {
         setActiveSession(null);
-        setConnectionStatus('waiting');
       }
       
-      setErrorMessage('');
+      setError('');
     } catch (error) {
-      setConnectionStatus('error');
-      setErrorMessage('Connection failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Connection failed. Please try again.');
     }
   };
 
@@ -123,81 +102,45 @@ const MainPlayer = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center">
-          <LoadingIndicator size="lg" color="primary" />
-          <p className="mt-4 text-xl text-text-light">Connecting to rehearsal...</p>
+          <LoadingIndicator size="lg" />
+          <p className="mt-4 text-xl text-white">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`
-      min-h-screen flex flex-col items-center justify-center p-4 
-      bg-background 
-      ${highContrast ? 'high-contrast' : ''} 
-      wave-bg
-      animate-fade-in
-    `}>
-      <div className="max-w-md w-full text-center">
-        <h1 className="text-4xl font-bold text-text-light mb-6 note-animation">
-          Waiting for next song
-        </h1>
-        
-        <Card className="mb-8 p-6 shadow-lg transition-all duration-300 hover:shadow-glow-light">
-          <p className="mb-4 text-text-muted text-xl">
-            The band leader will select a song soon
-          </p>
+    <div className={`min-h-screen flex flex-col items-center justify-center p-4 bg-background ${highContrast ? 'high-contrast' : ''}`}>
+      <div className="w-full max-w-md">
+        <Card className="p-6 text-center">
+          <h1 className="text-3xl font-bold mb-6">Waiting for next song</h1>
           
-          {/* Enhanced connection status */}
-          <div className={`
-            inline-flex items-center px-4 py-2 rounded-full
-            transition-all duration-300
-            ${connected 
-              ? 'bg-accent-green text-white shadow-glow-blue' 
-              : connectionStatus === 'error' ? 'bg-error text-white' : 
-                'bg-accent-yellow text-black animate-pulse'}
-          `}>
-            <span className={`
-              w-3 h-3 rounded-full mr-2 
-              ${connectionStatus === 'connecting' ? 'animate-pulse' : ''}
-            `}></span>
-            {connectionStatus === 'connected' ? 'Connected to rehearsal' : 
-             connectionStatus === 'error' ? 'Connection error' : 
-             'Waiting for admin to start'}
-          </div>
-          
-          {/* Error message */}
-          {errorMessage && (
-            <div className="mt-4 p-3 bg-error bg-opacity-20 text-error rounded">
-              {errorMessage}
+          {error && (
+            <div className="mb-6 p-3 bg-error/20 text-error rounded">
+              {error}
+              <Button
+                onClick={handleRetry}
+                variant="primary"
+                className="mt-3"
+              >
+                Retry Connection
+              </Button>
             </div>
           )}
           
-          {/* Retry button */}
-          {connectionStatus === 'error' && (
-            <Button
-              onClick={handleRetry}
-              variant="primary"
-              className="mt-4"
-            >
-              Retry Connection
-            </Button>
+          <p className="text-xl mb-4">The admin will select a song soon</p>
+          
+          {user && (
+            <div className="mt-8 text-text-muted">
+              <p>Logged in as: <span className="font-semibold">{user.username}</span></p>
+              <p>
+                Instrument: <span className="font-semibold">
+                  {user.instrument === 'other' ? user.otherInstrument : user.instrument}
+                </span>
+              </p>
+            </div>
           )}
         </Card>
-        
-        {/* User info with subtle animation */}
-        {user && (
-          <div className="text-text-muted text-xl animate-slide-up">
-            <p className="mb-2">
-              Signed in as <span className="font-semibold instrument-accent">{user.username}</span>
-            </p>
-            <p>
-              Instrument: <span className="font-semibold instrument-accent">
-                {user.instrument === 'other' ? user.otherInstrument : user.instrument}
-              </span>
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

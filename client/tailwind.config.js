@@ -8,104 +8,131 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Main brand colors - enhanced for better contrast and consistency
+        // Apple inspired color palette
         primary: {
-          DEFAULT: '#FF5500', // Vibrant orange - core brand color
-          light: '#FF7733',
-          dark: '#CC4400',
-          50: '#FFF2EC',  // Very light shade for subtle backgrounds
-          100: '#FFE5D9', // Light shade for hover states
-          900: '#993300', // Very dark shade for strong contrast elements
+          DEFAULT: '#007AFF', // iOS blue
+          light: '#5AC8FA',
+          dark: '#0062CC',
+          50: '#E1F0FF',
+          100: '#B8DAFF',
+          900: '#004080',
         },
         secondary: {
-          DEFAULT: '#0D0D0D',
-          light: '#333333',
+          DEFAULT: '#1C1C1E', // Dark mode background
+          light: '#2C2C2E',
           dark: '#000000',
         },
         accent: {
-          DEFAULT: '#FFD700', // Gold
-          light: '#FFEB66',
-          dark: '#CCA800',
-          50: '#FFFBEB', // Very light shade
-          blue: '#00A3FF',    // Electric blue like studio equipment
-          yellow: '#FFD700',  // Gold for chord highlighting
-          green: '#00CC88',   // Success indicators
-          red: '#FF3D00',     // Error and warning states
+          DEFAULT: '#FF9500', // iOS orange
+          light: '#FFCC00', // iOS yellow
+          dark: '#FF3B30', // iOS red
+          50: '#FFF9EB',
+          blue: '#5AC8FA', // iOS light blue
+          yellow: '#FFCC00',
+          green: '#34C759', // iOS green
+          red: '#FF3B30',
+          purple: '#AF52DE', // iOS purple
+          pink: '#FF2D55', // iOS pink
+          indigo: '#5856D6', // iOS indigo
         },
-        // UI colors with proper dark theme - optimized for smoky environments
+        // UI colors with proper Apple-like dark theme
         background: {
-          light: '#F5F5F5',
-          DEFAULT: '#121212', // Dark background for high contrast
-          dark: '#0A0A0A',
-          smoky: '#0F0F0F', // Slightly lighter than darkest for layering
+          light: '#F2F2F7', // iOS light background
+          DEFAULT: '#1C1C1E', // iOS dark background
+          dark: '#000000',
         },
         surface: {
           light: '#FFFFFF',
-          DEFAULT: '#1E1E1E', // Dark surface for high contrast
-          dark: '#181818',
-          elevated: '#252525', // Slightly lighter for cards and elevated elements
+          DEFAULT: '#2C2C2E', // iOS dark card background
+          dark: '#1C1C1E',
+          elevated: '#3A3A3C', // Slightly lighter for cards
         },
         text: {
           light: '#FFFFFF', // White text for dark backgrounds
-          muted: '#A0A0A0', // Muted gray for secondary text
-          dark: '#333333', // Dark text for light backgrounds
+          muted: '#8E8E93', // iOS gray for secondary text
+          dark: '#1C1C1E', // Dark text for light backgrounds
           emphasis: '#FFFFFF', // Bright white for emphasis
         },
-        // Status colors - enhanced for accessibility
+        // Status colors - iOS inspired
         success: {
-          DEFAULT: '#10B981', // Green
-          light: '#D1FAE5',
-          dark: '#059669', // Darker green for better contrast
+          DEFAULT: '#34C759', // iOS green
+          light: '#E3FFF1',
+          dark: '#248A3D',
         },
         error: {
-          DEFAULT: '#EF4444', // Red
-          light: '#FEE2E2',
-          dark: '#B91C1C', // Darker red for better contrast
+          DEFAULT: '#FF3B30', // iOS red
+          light: '#FFE5E5',
+          dark: '#C60B00',
         },
         warning: {
-          DEFAULT: '#F59E0B', // Amber
-          light: '#FEF3C7',
-          dark: '#D97706', // Darker amber for better contrast
+          DEFAULT: '#FF9500', // iOS orange
+          light: '#FFF6E5',
+          dark: '#C93400',
         },
         info: {
-          DEFAULT: '#3B82F6', // Blue
-          light: '#DBEAFE',
-          dark: '#2563EB', // Darker blue for better contrast
+          DEFAULT: '#007AFF', // iOS blue
+          light: '#E1F0FF',
+          dark: '#0040DD',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        hebrew: ['Assistant', 'sans-serif'], // Optimized for Hebrew text
-        mono: ['Roboto Mono', 'monospace'],
-        display: ['Montserrat', 'Inter', 'system-ui', 'sans-serif'], // For headings
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'San Francisco',
+          'Helvetica Neue',
+          'Helvetica',
+          'Arial',
+          'sans-serif'
+        ],
+        hebrew: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'San Francisco',
+          'Helvetica Neue',
+          'Helvetica',
+          'Arial',
+          'sans-serif'
+        ],
+        mono: [
+          'SF Mono',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'Liberation Mono',
+          'Courier New',
+          'monospace'
+        ],
+        display: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'San Francisco',
+          'Helvetica Neue',
+          'Helvetica',
+          'Arial',
+          'sans-serif'
+        ],
       },
       fontSize: {
-        // Enhanced text sizes for better readability in smoky environments
-        'base-large': '1.125rem', // 18px
-        'xl-large': '1.375rem',   // 22px
-        '2xl-large': '1.625rem',  // 26px
-        '3xl-large': '2rem',      // 32px
-        '4xl-large': '2.5rem',    // 40px
-      },
-      spacing: {
-        '18': '4.5rem',
-        '68': '17rem',
-        '84': '21rem',
-        '96': '24rem',
-        '128': '32rem',
+        // iOS-inspired text sizes
+        'base-large': '1.0625rem', // 17px
+        'xl-large': '1.3125rem',   // 21px
+        '2xl-large': '1.5rem',     // 24px
+        '3xl-large': '1.9375rem',  // 31px
+        '4xl-large': '2.5rem',     // 40px
       },
       borderRadius: {
-        '4xl': '2rem',
+        'ios': '0.75rem', // Apple's typical corner radius
+        'ios-lg': '1.25rem', // Larger iOS style radius
+        'ios-xl': '1.75rem', // Extra large iOS style radius
+        'ios-full': '9999px', // Full rounded like iOS buttons
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce-slow': 'bounce 2s infinite',
-        'fade-in': 'fadeIn 0.5s ease-in',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'slide-in-right': 'slideInRight 0.3s ease-out',
-        'slide-in-left': 'slideInLeft 0.3s ease-out',
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
         'float': 'float 3s ease-in-out infinite',
-        'wave': 'wave 15s linear infinite',
+        'spring': 'spring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       },
       keyframes: {
         fadeIn: {
@@ -113,95 +140,129 @@ module.exports = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(15px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideInRight: {
-          '0%': { transform: 'translateX(20px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        slideInLeft: {
-          '0%': { transform: 'translateX(-20px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
+          '50%': { transform: 'translateY(-8px)' },
         },
-        wave: {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
+        spring: {
+          '0%': { transform: 'scale(0.95)' },
+          '70%': { transform: 'scale(1.04)' },
+          '100%': { transform: 'scale(1)' },
         },
       },
       boxShadow: {
-        'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.15)',
-        'soft': '0 4px 14px 0 rgba(0, 0, 0, 0.1)',
-        'soft-lg': '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
-        'glow': '0 0 15px rgba(255, 85, 0, 0.5)', // Primary color glow effect
-        'glow-light': '0 0 10px rgba(255, 85, 0, 0.3)', // Subtle glow effect
-        'glow-blue': '0 0 15px rgba(0, 163, 255, 0.5)',
-        'glow-yellow': '0 0 15px rgba(255, 215, 0, 0.5)',
+        'ios': '0 4px 10px rgba(0, 0, 0, 0.05), 0 0 1px rgba(0, 0, 0, 0.1)',
+        'ios-md': '0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05)',
+        'ios-lg': '0 10px 30px rgba(0, 0, 0, 0.15), 0 1px 5px rgba(0, 0, 0, 0.05)',
+        'ios-inner': 'inset 0 1px 3px rgba(0, 0, 0, 0.05)',
+        'ios-focus': '0 0 0 4px rgba(0, 122, 255, 0.3)',
+        'ios-error': '0 0 0 4px rgba(255, 59, 48, 0.3)',
+        'ios-success': '0 0 0 4px rgba(52, 199, 89, 0.3)',
       },
-      // For auto-scroll feature
-      transitionTimingFunction: {
-        'scroll': 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+      backdropFilter: {
+        'ios': 'blur(20px) saturate(180%)',
       },
     },
   },
   plugins: [
     function({ addComponents, theme }) {
       addComponents({
-        // Base card component
-        '.card-base': {
-          backgroundColor: theme('colors.surface.DEFAULT'),
-          borderRadius: theme('borderRadius.lg'),
-          boxShadow: theme('boxShadow.soft'),
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-          overflow: 'hidden',
-        },
-        // Elevated card with hover effects
-        '.card-elevated': {
-          backgroundColor: theme('colors.surface.elevated'),
-          borderRadius: theme('borderRadius.lg'),
-          boxShadow: theme('boxShadow.soft-lg'),
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: theme('boxShadow.glow-light'),
-          },
-        },
-        // Special card for the Live page
-        '.card-live': {
-          backgroundColor: theme('colors.surface.DEFAULT'),
-          borderRadius: theme('borderRadius.lg'),
-          boxShadow: theme('boxShadow.soft'),
-          borderLeft: `4px solid ${theme('colors.primary.DEFAULT')}`,
-        },
-        // Button base styles
-        '.btn-base': {
+        // iOS-style button
+        '.ios-button': {
+          borderRadius: theme('borderRadius.ios-full'),
           fontWeight: theme('fontWeight.medium'),
+          padding: `${theme('spacing.3')} ${theme('spacing.6')}`,
           transition: 'all 0.2s ease',
-          borderRadius: theme('borderRadius.md'),
-          padding: `${theme('spacing.2')} ${theme('spacing.4')}`,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          '&:focus': {
-            outline: 'none',
-            ringColor: theme('colors.primary.DEFAULT'),
-            ringWidth: '2px',
+          '&:active': {
+            transform: 'scale(0.97)',
           },
         },
-        // High contrast mode
-        '.high-contrast-mode': {
-          backgroundColor: '#000000', // Pure black background
-          color: '#FFFFFF', // Pure white text
-          '& .card-base, & .card-elevated, & .card-live': {
-            backgroundColor: '#0A0A0A', // Very dark gray for cards
-            borderColor: '#333333', // More visible borders
+        '.ios-primary-button': {
+          backgroundColor: theme('colors.primary.DEFAULT'),
+          color: theme('colors.white'),
+          '&:hover': {
+            backgroundColor: theme('colors.primary.dark'),
           },
-          '& .text-muted': {
-            color: '#CCCCCC', // Lighter gray for better readability
+        },
+        '.ios-secondary-button': {
+          backgroundColor: theme('colors.background.DEFAULT'),
+          color: theme('colors.primary.DEFAULT'),
+          border: `1px solid ${theme('colors.surface.light')}`,
+          '&:hover': {
+            backgroundColor: theme('colors.surface.DEFAULT'),
+          },
+        },
+        // iOS-style card
+        '.ios-card': {
+          backgroundColor: theme('colors.surface.DEFAULT'),
+          borderRadius: theme('borderRadius.ios-lg'),
+          boxShadow: theme('boxShadow.ios'),
+          overflow: 'hidden',
+        },
+        // iOS-style input
+        '.ios-input': {
+          backgroundColor: theme('colors.surface.DEFAULT'),
+          borderRadius: theme('borderRadius.ios'),
+          border: `1px solid ${theme('colors.surface.light')}`,
+          padding: `${theme('spacing.3')} ${theme('spacing.4')}`,
+          '&:focus': {
+            outline: 'none',
+            boxShadow: theme('boxShadow.ios-focus'),
+            borderColor: theme('colors.primary.DEFAULT'),
+          },
+        },
+        // iOS-style sheet modal
+        '.ios-sheet': {
+          backgroundColor: theme('colors.surface.DEFAULT'),
+          borderTopLeftRadius: theme('borderRadius.ios-xl'),
+          borderTopRightRadius: theme('borderRadius.ios-xl'),
+          boxShadow: theme('boxShadow.ios-lg'),
+        },
+        // iOS navbar style with blur
+        '.ios-navbar': {
+          backdropFilter: 'blur(12px) saturate(180%)',
+          backgroundColor: 'rgba(28, 28, 30, 0.8)',
+          borderBottomWidth: '0.5px',
+          borderBottomColor: 'rgba(142, 142, 147, 0.2)',
+        },
+        // iOS tab bar style
+        '.ios-tabbar': {
+          backdropFilter: 'blur(12px) saturate(180%)',
+          backgroundColor: 'rgba(28, 28, 30, 0.8)',
+          borderTopWidth: '0.5px',
+          borderTopColor: 'rgba(142, 142, 147, 0.2)',
+        },
+        // iOS toggle
+        '.ios-toggle': {
+          position: 'relative',
+          width: '51px',
+          height: '31px',
+          borderRadius: '31px',
+          backgroundColor: 'rgba(120, 120, 128, 0.32)',
+          transition: 'background-color 0.2s',
+          '&.active': {
+            backgroundColor: theme('colors.success.DEFAULT'),
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: '2px',
+            left: '2px',
+            width: '27px',
+            height: '27px',
+            borderRadius: '50%',
+            background: theme('colors.white'),
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+            transition: 'transform 0.2s',
+          },
+          '&.active::after': {
+            transform: 'translateX(20px)',
           },
         },
       });

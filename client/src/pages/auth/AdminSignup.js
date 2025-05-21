@@ -72,85 +72,90 @@ const AdminSignup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="max-w-md w-full p-8">
-        <h1 className="text-3xl font-bold text-center text-text-light mb-6">JaMoveo</h1>
-        <h2 className="text-xl font-semibold text-center text-text-light mb-6">Admin Sign Up</h2>
-        
-        {error && (
-          <div className="bg-error bg-opacity-20 text-error p-3 rounded mb-4">
-            {error}
+      <div className="w-full max-w-md">
+        <Card className="p-6">
+          <h1 className="text-2xl font-bold text-center mb-6">Admin Sign Up</h1>
+          
+          {error && (
+            <div className="mb-4 p-3 bg-error/20 text-error rounded">
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <Input
+              id="username"
+              name="username"
+              label="Username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Choose a username"
+              disabled={loading}
+              required
+              className="mb-4"
+            />
+            
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Choose a password"
+              disabled={loading}
+              required
+              className="mb-4"
+              autoComplete="new-password"
+            />
+            
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              label="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              disabled={loading}
+              required
+              className="mb-4"
+            />
+            
+            <Input
+              id="adminCode"
+              name="adminCode"
+              label="Admin Registration Code"
+              value={formData.adminCode}
+              onChange={handleChange}
+              placeholder="Enter the admin code"
+              disabled={loading}
+              required
+              className="mb-6"
+            />
+            
+            <Button
+              type="submit"
+              variant="primary"
+              size="full"
+              disabled={loading}
+              loading={loading}
+              className="mb-4"
+            >
+              {loading ? 'Creating Admin Account...' : 'Create Admin Account'}
+            </Button>
+          </form>
+          
+          <div className="mt-4 text-center">
+            <p className="text-gray-400">
+              Not an admin?{' '}
+              <Link to="/signup" className="text-primary hover:underline">
+                Regular Sign Up
+              </Link>
+            </p>
           </div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <Input
-            id="username"
-            name="username"
-            label="Username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="Choose a username"
-            disabled={loading}
-            required
-          />
-          
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            label="Password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Choose a password"
-            disabled={loading}
-            required
-          />
-          
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            label="Confirm Password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="Confirm your password"
-            disabled={loading}
-            required
-            autoComplete="current-password"
-          />
-          
-          <Input
-            id="adminCode"
-            name="adminCode"
-            label="Admin Registration Code"
-            value={formData.adminCode}
-            onChange={handleChange}
-            placeholder="Enter the admin code"
-            disabled={loading}
-            required
-          />
-          
-          <Button
-            type="submit"
-            variant="primary"
-            size="full"
-            disabled={loading}
-            loading={loading}
-            className="mt-6"
-          >
-            {loading ? 'Creating Admin Account...' : 'Create Admin Account'}
-          </Button>
-        </form>
-        
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Not an admin?{' '}
-            <Link to="/signup" className="text-primary hover:underline">
-              Regular Sign Up
-            </Link>
-          </p>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };

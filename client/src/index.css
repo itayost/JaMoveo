@@ -3,30 +3,56 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600;700&display=swap');
+/* Import fonts - SF Pro from Apple CDN or fallback to system fonts */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: local('SF Pro Display'), 
+       local('-apple-system'),
+       local('BlinkMacSystemFont');
+  font-weight: 300 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Text';
+  src: local('SF Pro Text'), 
+       local('-apple-system'),
+       local('BlinkMacSystemFont');
+  font-weight: 300 900;
+  font-style: normal;
+}
 
 /* Custom base styles */
 @layer base {
   html {
     @apply text-text-light bg-background;
     scroll-behavior: smooth;
+    font-family: 'SF Pro Text', '-apple-system', 'BlinkMacSystemFont', system-ui, sans-serif;
   }
   
   body {
-    @apply antialiased text-base;
+    @apply antialiased text-base bg-background;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', system-ui, sans-serif;
   }
   
   h1 {
     @apply text-2xl md:text-3xl font-bold mb-4;
+    letter-spacing: -0.02em;
   }
   
   h2 {
     @apply text-xl md:text-2xl font-semibold mb-3;
+    letter-spacing: -0.02em;
   }
 
   p {
     @apply mb-4;
+    line-height: 1.5;
   }
   
   a {
@@ -39,22 +65,39 @@
 
 /* Custom component classes */
 @layer components {
-  /* Button styles */
-  .btn-primary {
-    @apply px-4 py-2 rounded bg-primary text-white hover:bg-primary-dark transition-colors;
+  /* iOS style focus rings */
+  .ios-focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
   }
   
-  .btn-secondary {
-    @apply px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600 transition-colors;
+  /* iOS style backdrop blur */
+  .ios-backdrop {
+    @apply backdrop-blur-md bg-background/80;
   }
   
-  .btn-danger {
-    @apply px-4 py-2 rounded bg-error text-white hover:bg-error-dark transition-colors;
+  /* iOS style navbar */
+  .ios-navbar {
+    @apply fixed top-0 inset-x-0 backdrop-blur-md bg-background/80 border-b border-gray-700/30 z-10;
   }
   
-  /* Form elements */
-  .form-input {
-    @apply w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-primary;
+  /* iOS style tab bar */
+  .ios-tabbar {
+    @apply fixed bottom-0 inset-x-0 backdrop-blur-md bg-background/80 border-t border-gray-700/30 z-10;
+  }
+  
+  /* iOS sytle button */
+  .ios-button {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-ios-full font-medium 
+      transition-all duration-200 active:scale-[0.97] focus:outline-none;
+  }
+  
+  .ios-button-primary {
+    @apply ios-button bg-primary text-white hover:bg-primary-dark focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+  }
+  
+  .ios-button-secondary {
+    @apply ios-button bg-surface/80 text-primary border border-gray-700 
+      hover:bg-surface focus:ring-2 focus:ring-primary focus:ring-opacity-50;
   }
   
   /* High contrast mode for smoky environments */
@@ -62,11 +105,6 @@
     @apply bg-black text-white;
     font-size: 1.2rem;
     line-height: 1.6;
-  }
-  
-  /* Live page specific styles */
-  .sticky-header {
-    @apply sticky top-0 z-10 bg-background p-4 border-b border-gray-700 bg-opacity-90;
   }
 }
 
@@ -86,38 +124,39 @@
   /* Text classes */
   .lyrics-text {
     @apply whitespace-pre-line text-xl leading-relaxed;
+    letter-spacing: -0.01em;
   }
   
   .lyrics-hebrew {
     @apply lyrics-text rtl;
   }
+  
+  /* Ultra-thin iOS divider */
+  .ios-divider {
+    @apply h-px bg-gray-700/30 w-full my-4;
+  }
+  
+  /* iOS gray grouped background */
+  .ios-grouped-bg {
+    @apply bg-surface/50;
+  }
 }
 
-/* Wave Background Effect */
-.wave-bg {
-  position: relative;
-  overflow: hidden;
+/* Custom animations */
+@keyframes ios-spring {
+  0% { transform: scale(0.8); opacity: 0; }
+  40% { transform: scale(1.05); opacity: 1; }
+  70% { transform: scale(0.97); }
+  100% { transform: scale(1); }
 }
 
-.wave-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(255, 85, 0, 0.1) 50.1%, transparent 60%),
-              radial-gradient(ellipse at center, transparent 0%, transparent 55%, rgba(0, 163, 255, 0.1) 55.1%, transparent 65%);
-  background-size: 50px 50px;
-  opacity: 0.05;
-  z-index: 0;
-  animation: wave 15s linear infinite;
-  pointer-events: none;
+.animate-ios-spring {
+  animation: ios-spring 0.5s ease-out forwards;
 }
 
 /* Chord Styling */
 .chord {
-  color: #FFD700;
+  color: #007AFF; /* iOS blue */
   font-weight: 600;
   transition: all 0.2s ease;
   position: relative;
@@ -125,8 +164,56 @@
 }
 
 .chord:hover {
-  color: #FF5500;
+  color: #5AC8FA; /* iOS light blue */
   transform: translateY(-2px);
+}
+
+/* Scroll Position Indicator */
+.scroll-indicator {
+  position: fixed;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 150px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.scroll-indicator-thumb {
+  position: absolute;
+  width: 100%;
+  background-color: #007AFF; /* iOS blue */
+  border-radius: 2px;
+  transition: height 0.1s ease-out;
+}
+
+/* Autoscroll visualizer */
+.scroll-visualizer {
+  display: inline-flex;
+  align-items: flex-end;
+  height: 16px;
+  margin-left: 8px;
+}
+
+.visualizer-bar {
+  width: 2px;
+  margin: 0 1px;
+  background-color: #007AFF; /* iOS blue */
+  animation: visualizerPulse 1.2s ease-in-out infinite;
+}
+
+.visualizer-bar:nth-child(1) { height: 30%; animation-delay: 0.0s; }
+.visualizer-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+.visualizer-bar:nth-child(3) { height: 100%; animation-delay: 0.2s; }
+.visualizer-bar:nth-child(4) { height: 70%; animation-delay: 0.3s; }
+.visualizer-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
+
+@keyframes visualizerPulse {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
 }
 
 /* High Contrast Enhancements */
@@ -141,90 +228,26 @@
 }
 
 .high-contrast .chord {
-  text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+  text-shadow: 0 0 6px rgba(0, 122, 255, 0.4);
 }
 
-/* Scroll Position Indicator */
-.scroll-indicator {
-  position: fixed;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 150px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  z-index: 20;
+/* Apple-style blur backgrounds */
+.glass-morphism {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background-color: rgba(28, 28, 30, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.scroll-indicator-thumb {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background-color: #FF5500;
-  border-radius: 2px;
-  transition: height 0.1s ease-out;
-}
-
-/* RTL Enhancements */
-[dir="rtl"] .chord {
-  direction: rtl;
-  text-align: right;
-}
-
-/* Musical Note Animation */
-.note-animation {
-  position: relative;
-}
-
-.note-animation::after {
-  content: '♪';
-  position: absolute;
-  color: rgba(255, 85, 0, 0.3);
-  font-size: 24px;
-  animation: float 3s ease-in-out infinite;
-  opacity: 0;
-}
-
-.note-animation:hover::after {
-  opacity: 1;
-}
-
-/* Instrument colors */
-.guitar-theme { --instrument-color: #FFA500; }
-.bass-theme { --instrument-color: #3D5AFE; }
-.drums-theme { --instrument-color: #FF1744; }
-.vocals-theme { --instrument-color: #AA00FF; }
-.keyboard-theme { --instrument-color: #00BFA5; }
-.saxophone-theme { --instrument-color: #FFD740; }
-.other-theme { --instrument-color: #FF5500; }
+/* Instrument color themes */
+.guitar-theme { --instrument-color: #FF9500; } /* iOS orange */
+.bass-theme { --instrument-color: #007AFF; } /* iOS blue */
+.drums-theme { --instrument-color: #FF2D55; } /* iOS pink */
+.vocals-theme { --instrument-color: #AF52DE; } /* iOS purple */
+.keyboard-theme { --instrument-color: #5AC8FA; } /* iOS light blue */
+.saxophone-theme { --instrument-color: #FFCC00; } /* iOS yellow */
+.other-theme { --instrument-color: #34C759; } /* iOS green */
 
 .instrument-accent {
-  color: var(--instrument-color, #FF5500);
-}
-
-/* Autoscroll visualizer */
-.scroll-visualizer {
-  display: inline-flex;
-  align-items: flex-end;
-  height: 16px;
-  margin-left: 8px;
-}
-
-.visualizer-bar {
-  width: 2px;
-  margin: 0 1px;
-  background-color: #FF5500;
-  animation: visualizerPulse 1.2s ease-in-out infinite;
-}
-
-.visualizer-bar:nth-child(1) { height: 30%; animation-delay: 0.0s; }
-.visualizer-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
-.visualizer-bar:nth-child(3) { height: 100%; animation-delay: 0.2s; }
-.visualizer-bar:nth-child(4) { height: 70%; animation-delay: 0.3s; }
-.visualizer-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
-
-@keyframes visualizerPulse {
-  0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
-  50% { transform: scaleY(1); opacity: 1; }
+  color: var(--instrument-color, #007AFF);
 }

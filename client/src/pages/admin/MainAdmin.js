@@ -19,36 +19,26 @@ const MainAdmin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 wave-bg animate-fade-in">
-      <div className="max-w-2xl mx-auto">
-        <header className="mb-8 animate-slide-up">
-          <h1 className="text-3xl font-bold text-text-light instrument-accent">
-            Search any song...
-          </h1>
-        </header>
-
-        <Card className="p-6 mb-6 shadow-lg hover:shadow-glow-light transition-all duration-300">
-          <p className="text-text-muted mb-6 animate-fade-in">
-            Search for a song to start the rehearsal session.
-          </p>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-md mx-auto">
+        <Card className="p-6">
+          <h1 className="text-2xl font-bold mb-6 text-center">Search any song...</h1>
           
-          <form 
-            onSubmit={handleSearch}
-            className="animate-slide-up"
-          >
+          <form onSubmit={handleSearch}>
             <Input
               id="search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Enter song title, artist, or lyrics"
-              className="mb-4 transition-all duration-300 focus:shadow-glow-light"
+              className="mb-4"
             />
+            
             <Button 
               type="submit"
               variant="primary"
+              size="full"
               disabled={!searchQuery.trim()}
-              className="w-full transition-all duration-300 hover:shadow-glow"
             >
               Search
             </Button>

@@ -5,21 +5,16 @@ import { useAuth } from '../../context/AuthContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
-/**
- * Login page component
- * Handles user authentication
- */
 const Login = () => {
   // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [localLoading, setLocalLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   
   // Auth context
-  const { login, error: authError, user, loading: authLoading } = useAuth();
+  const { login, error: authError, user } = useAuth();
   
   // Router
   const navigate = useNavigate();
@@ -34,7 +29,7 @@ const Login = () => {
   // Sync auth context errors to component state
   useEffect(() => {
     if (authError) {
-      setLoginError(authError);
+      setError(authError);
     }
   }, [authError]);
   
@@ -44,18 +39,18 @@ const Login = () => {
     
     // Basic validation
     if (!username.trim()) {
-      setLoginError('Username is required');
+      setError('Username is required');
       return;
     }
     
     if (!password) {
-      setLoginError('Password is required');
+      setError('Password is required');
       return;
     }
     
     try {
-      setLocalLoading(true);
-      setLoginError('');
+      setLoading(true);
+      setError('');
       
       // Attempt login
       const success = await login(username, password);
@@ -66,84 +61,84 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setLoginError('An error occurred during login. Please try again.');
+      setError('An error occurred during login. Please try again.');
     } finally {
-      setLocalLoading(false);
+      setLoading(false);
     }
   };
-  
-  // Determine if we're in a loading state
-  const isLoading = authLoading || localLoading;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="max-w-md w-full p-8">
-        <h1 className="text-3xl font-bold text-center text-text-light mb-6">JaMoveo</h1>
-        <h2 className="text-xl font-semibold text-center text-text-light mb-6">Log In</h2>
-        
-        {/* Success message from previous action (e.g., registration) */}
-        {successMessage && (
-          <div className="bg-success bg-opacity-20 text-success p-3 rounded mb-4">
-            {successMessage}
-          </div>
-        )}
-        
-        {/* Error message */}
-        {loginError && (
-          <div className="bg-error bg-opacity-20 text-error p-3 rounded mb-4">
-            {loginError}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} noValidate>
-          <Input
-            id="username"
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            disabled={isLoading}
-            required
-          />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md">
+        <Card className="p-6">
+          <h1 className="text-2xl font-bold text-center mb-6">Login to JaMoveo</h1>
           
-          <Input
-            id="password"
-            type="password"
-            label="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            disabled={isLoading}
-            required
-            autoComplete="current-password"
-          />
+          {/* Success message from previous action (e.g., registration) */}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-success/20 text-success rounded">
+              {successMessage}
+            </div>
+          )}
           
-          <Button
-            type="submit"
-            variant="primary"
-            size="full"
-            disabled={isLoading}
-            loading={isLoading}
-            className="mt-6"
-          >
-            {isLoading ? 'Logging in...' : 'Log In'}
-          </Button>
-        </form>
-        
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="text-primary hover:underline">
-              Sign Up
-            </Link>
-          </p>
-          <p className="text-gray-400 mt-2">
-            <Link to="/admin-signup" className="text-primary hover:underline">
-              Admin Sign Up
-            </Link>
-          </p>
-        </div>
-      </Card>
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-error/20 text-error rounded">
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} noValidate>
+            <Input
+              id="username"
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              disabled={loading}
+              required
+              className="mb-4"
+            />
+            
+            <Input
+              id="password"
+              type="password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              disabled={loading}
+              required
+              className="mb-6"
+              autoComplete="current-password"
+            />
+            
+            <Button
+              type="submit"
+              variant="primary"
+              size="full"
+              disabled={loading}
+              loading={loading}
+              className="mb-4"
+            >
+              {loading ? 'Logging in...' : 'Log In'}
+            </Button>
+          </form>
+          
+          <div className="mt-4 text-center">
+            <p className="text-gray-400 mb-2">
+              Dont have an account?{' '}
+              <Link to="/signup" className="text-primary hover:underline">
+                Sign Up
+              </Link>
+            </p>
+            <p className="text-gray-400">
+              <Link to="/admin-signup" className="text-primary hover:underline">
+                Admin Sign Up
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -25,18 +25,12 @@ const LivePage = () => {
   
   // State management
   const [autoScroll, setAutoScroll] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState(connected ? 'connected' : 'connecting');
   const [scrollPosition, setScrollPosition] = useState(0);
   const [documentHeight, setDocumentHeight] = useState(0);
   
   // Refs
   const contentRef = useRef(null);
   const scrollIntervalRef = useRef(null);
-
-  // Update connection status when socket state changes
-  useEffect(() => {
-    setConnectionStatus(connected ? 'connected' : 'connecting');
-  }, [connected]);
 
   // Socket connection and events
   useEffect(() => {
@@ -159,29 +153,14 @@ const LivePage = () => {
   const scrollProgress = documentHeight > 0 
     ? Math.min(100, Math.max(0, (scrollPosition / documentHeight) * 100)) 
     : 0;
-  
-  // Get instrument theme class
-  const getInstrumentThemeClass = () => {
-    if (!user) return 'other-theme';
-    
-    switch (user.instrument) {
-      case 'guitar': return 'guitar-theme';
-      case 'bass': return 'bass-theme';
-      case 'drums': return 'drums-theme';
-      case 'vocals': return 'vocals-theme';
-      case 'keyboard': return 'keyboard-theme';
-      case 'saxophone': return 'saxophone-theme';
-      default: return 'other-theme';
-    }
-  };
 
   // Loading state
   if (songLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <LoadingIndicator size="lg" color="primary" />
-          <p className="mt-4 text-xl text-text-light">Loading song...</p>
+          <LoadingIndicator size="lg" />
+          <p className="mt-4 text-xl text-white">Loading song...</p>
         </div>
       </div>
     );
@@ -228,13 +207,7 @@ const LivePage = () => {
 
   return (
     <div 
-      className={`
-        min-h-screen bg-background pb-24 
-        ${highContrast ? 'high-contrast' : ''} 
-        ${getInstrumentThemeClass()}
-        wave-bg
-        animate-fade-in
-      `} 
+      className={`min-h-screen bg-background pb-24 ${highContrast ? 'high-contrast' : ''}`} 
       ref={contentRef}
       dir={isHebrewSong ? 'rtl' : 'ltr'}
     >
@@ -246,29 +219,13 @@ const LivePage = () => {
         />
       </div>
       
-      {/* Connection status indicator */}
-      <div className={`
-        fixed top-0 right-0 m-2 px-3 py-1 rounded-full text-xs flex items-center z-30
-        transition-all duration-300
-        ${connected 
-          ? 'bg-accent-green/20 text-accent-green shadow-glow-blue' 
-          : 'bg-accent-yellow/20 text-accent-yellow animate-pulse'
-        }
-      `}>
-        <span className={`
-          w-2 h-2 rounded-full mr-2
-          ${connected ? 'bg-accent-green' : 'bg-accent-yellow animate-pulse'}
-        `}></span>
-        {connected ? 'Connected' : 'Connecting...'}
-      </div>
-      
       {/* Song info header */}
-      <header className="sticky top-0 z-10 bg-background bg-opacity-95 backdrop-blur-sm shadow-md border-b border-gray-700 mb-4 transition-all duration-300">
+      <header className="sticky top-0 z-10 bg-background bg-opacity-95 shadow-md border-b border-gray-700 mb-4">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-3xl font-bold text-text-light mb-1 song-title transition-all duration-300">
+          <h1 className="text-2xl font-bold text-white mb-1 song-title">
             {song.title}
           </h1>
-          <p className="text-xl text-text-muted transition-all duration-300">
+          <p className="text-lg text-gray-400">
             {song.artist}
           </p>
         </div>
@@ -278,90 +235,58 @@ const LivePage = () => {
         {/* Role-based content rendering */}
         {user?.instrument === 'vocals' ? (
           // Vocalist view - lyrics only
-          <div className="lyrics-text animate-slide-up">
-            <h2 className="text-xl mb-4 instrument-accent font-semibold transition-all duration-300">
+          <div className="lyrics-text">
+            <h2 className="text-xl mb-4 text-primary font-semibold">
               Lyrics
             </h2>
-            <pre className="whitespace-pre-line text-xl pb-8 transition-all duration-300">
+            <pre className="whitespace-pre-line text-xl pb-8">
               {song.lyrics}
             </pre>
           </div>
         ) : (
           // Instrumentalist view - chords and lyrics
-          <div className="animate-slide-up">
+          <div>
             <div className="mb-8">
-              <h2 className="text-xl mb-4 instrument-accent font-semibold transition-all duration-300">
+              <h2 className="text-xl mb-4 text-primary font-semibold">
                 Chords
               </h2>
-              <div className="bg-surface-elevated p-4 rounded-lg overflow-x-auto shadow-md transition-all duration-300">
-                {/* Enhanced chord display - process chords inline */}
-                <div className="font-mono text-xl">
-                  {song.chords.split('\n').map((line, i) => {
-                    // Enhance chord display by identifying chords with regex
-                    const enhancedLine = line.replace(
-                      /([A-G][#b]?(?:maj|min|m|dim|aug|sus[24]|[2-9]|add[2-9]|\/[A-G][#b]?)*)/g, 
-                      '<span class="chord">$1</span>'
-                    );
-                    
-                    return (
-                      <div 
-                        key={i} 
-                        className="mb-1"
-                        dangerouslySetInnerHTML={{ __html: enhancedLine }}
-                      />
-                    );
-                  })}
-                </div>
+              <div className="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                <pre className="font-mono text-xl">
+                  {song.chords}
+                </pre>
               </div>
             </div>
             
             <div className="mb-8">
-              <h2 className="text-xl my-4 instrument-accent font-semibold transition-all duration-300">
+              <h2 className="text-xl mb-4 text-primary font-semibold">
                 Lyrics
               </h2>
-              <div className={isHebrewSong ? 'rtl' : ''}>
-                <pre className="whitespace-pre-line text-xl transition-all duration-300">
-                  {song.lyrics}
-                </pre>
-              </div>
+              <pre className="whitespace-pre-line text-xl">
+                {song.lyrics}
+              </pre>
             </div>
           </div>
         )}
       </main>
 
       {/* Control panel */}
-      <div className="fixed bottom-0 inset-x-0 p-4 bg-surface shadow-lg border-t border-gray-700 z-20 backdrop-blur-sm transition-all duration-300">
+      <div className="fixed bottom-0 inset-x-0 p-4 bg-gray-800 shadow-lg border-t border-gray-700 z-20">
         <div className="container mx-auto flex justify-between items-center">
-          {/* Auto-scroll toggle with visualizer */}
-          <div className="flex items-center">
-            <Button
-              onClick={handleToggleAutoScroll}
-              variant={autoScroll ? 'primary' : 'secondary'}
-              className={`transition-all duration-300 ${autoScroll ? 'shadow-glow' : ''}`}
-            >
-              {autoScroll ? 'Stop Auto-Scroll' : 'Auto-Scroll'}
-            </Button>
-            
-            {/* Add visualizer when auto-scroll is on */}
-            {autoScroll && (
-              <div className="scroll-visualizer">
-                <div className="visualizer-bar"></div>
-                <div className="visualizer-bar"></div>
-                <div className="visualizer-bar"></div>
-                <div className="visualizer-bar"></div>
-                <div className="visualizer-bar"></div>
-              </div>
-            )}
-          </div>
+          {/* Auto-scroll toggle */}
+          <Button
+            onClick={handleToggleAutoScroll}
+            variant={autoScroll ? 'primary' : 'secondary'}
+          >
+            {autoScroll ? 'Stop Auto-Scroll' : 'Auto-Scroll'}
+          </Button>
           
           {/* Admin-only quit button */}
           {user?.isAdmin && (
             <Button
               onClick={handleQuitSong}
               variant="danger"
-              className="transition-all duration-300 hover:shadow-glow-red"
             >
-              End Song
+              Quit
             </Button>
           )}
         </div>
