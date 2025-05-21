@@ -1,7 +1,8 @@
-// client/src/components/shared/Navigation.js
+// client/src/components/shared/Navigation.js - Simplified Version
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Button from '../ui/Button';
 
 /**
  * Navigation component with fixed positioning
@@ -50,12 +51,13 @@ const Navigation = () => {
             </div>
             
             {/* Logout button */}
-            <button
+            <Button
               onClick={handleLogout}
-              className="px-3 py-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+              variant="danger"
+              size="sm"
             >
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </div>
