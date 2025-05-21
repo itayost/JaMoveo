@@ -27,6 +27,10 @@ module.exports = {
           light: '#FFEB66',
           dark: '#CCA800',
           50: '#FFFBEB', // Very light shade
+          blue: '#00A3FF',    // Electric blue like studio equipment
+          yellow: '#FFD700',  // Gold for chord highlighting
+          green: '#00CC88',   // Success indicators
+          red: '#FF3D00',     // Error and warning states
         },
         // UI colors with proper dark theme - optimized for smoky environments
         background: {
@@ -100,6 +104,8 @@ module.exports = {
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-in-right': 'slideInRight 0.3s ease-out',
         'slide-in-left': 'slideInLeft 0.3s ease-out',
+        'float': 'float 3s ease-in-out infinite',
+        'wave': 'wave 15s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -118,6 +124,14 @@ module.exports = {
           '0%': { transform: 'translateX(-20px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        wave: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       boxShadow: {
         'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.15)',
@@ -125,6 +139,8 @@ module.exports = {
         'soft-lg': '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
         'glow': '0 0 15px rgba(255, 85, 0, 0.5)', // Primary color glow effect
         'glow-light': '0 0 10px rgba(255, 85, 0, 0.3)', // Subtle glow effect
+        'glow-blue': '0 0 15px rgba(0, 163, 255, 0.5)',
+        'glow-yellow': '0 0 15px rgba(255, 215, 0, 0.5)',
       },
       // For auto-scroll feature
       transitionTimingFunction: {
@@ -193,4 +209,4 @@ module.exports = {
   ],
   // Enable dark mode for potential future light/dark toggle
   darkMode: 'class',
-};
+}

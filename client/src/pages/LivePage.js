@@ -9,10 +9,6 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 
-/**
- * LivePage displays the currently selected song during a rehearsal session
- * Shows different content based on user's instrument
- */
 const LivePage = () => {
   // Navigation and URL parameters
   const location = useLocation();
@@ -24,13 +20,14 @@ const LivePage = () => {
   // Custom hooks
   const { user } = useAuth();
   const { socket, connected, quitSong: socketQuitSong } = useSocket();
-  const { highContrast, toggleHighContrast } = useTheme();
+  const { highContrast } = useTheme();
   const { song, loading: songLoading, error: songError } = useSong(songId);
   
   // State management
   const [autoScroll, setAutoScroll] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(2); // Speed in pixels
   const [connectionStatus, setConnectionStatus] = useState(connected ? 'connected' : 'connecting');
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [documentHeight, setDocumentHeight] = useState(0);
   
   // Refs
   const contentRef = useRef(null);
@@ -84,7 +81,7 @@ const LivePage = () => {
       // Start auto-scrolling
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy({
-          top: scrollSpeed,
+          top: 2,
           behavior: 'auto'
         });
         
@@ -109,7 +106,30 @@ const LivePage = () => {
         clearInterval(scrollIntervalRef.current);
       }
     };
-  }, [autoScroll, scrollSpeed]);
+  }, [autoScroll]);
+
+  // Add scroll position tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+    
+    const handleResize = () => {
+      setDocumentHeight(document.body.scrollHeight - window.innerHeight);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+    
+    // Initial calculations
+    handleScroll();
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Handle quit song (admin only)
   const handleQuitSong = () => {
@@ -135,9 +155,24 @@ const LivePage = () => {
     setAutoScroll(!autoScroll);
   };
 
-  // Handle speed change
-  const handleSpeedChange = (newSpeed) => {
-    setScrollSpeed(newSpeed);
+  // Calculate scroll progress
+  const scrollProgress = documentHeight > 0 
+    ? Math.min(100, Math.max(0, (scrollPosition / documentHeight) * 100)) 
+    : 0;
+  
+  // Get instrument theme class
+  const getInstrumentThemeClass = () => {
+    if (!user) return 'other-theme';
+    
+    switch (user.instrument) {
+      case 'guitar': return 'guitar-theme';
+      case 'bass': return 'bass-theme';
+      case 'drums': return 'drums-theme';
+      case 'vocals': return 'vocals-theme';
+      case 'keyboard': return 'keyboard-theme';
+      case 'saxophone': return 'saxophone-theme';
+      default: return 'other-theme';
+    }
   };
 
   // Loading state
@@ -190,45 +225,50 @@ const LivePage = () => {
 
   // Set appropriate text direction based on language
   const isHebrewSong = song.language === 'Hebrew';
-  
-  // Font size classes based on high contrast mode
-  const lyricsClass = highContrast ? 'text-2xl leading-relaxed' : 'text-xl leading-relaxed';
-  const chordsClass = highContrast ? 'text-2xl font-mono' : 'text-xl font-mono';
 
   return (
     <div 
-      className={`min-h-screen bg-background pb-24 ${highContrast ? 'high-contrast' : ''}`} 
+      className={`
+        min-h-screen bg-background pb-24 
+        ${highContrast ? 'high-contrast' : ''} 
+        ${getInstrumentThemeClass()}
+        wave-bg
+        animate-fade-in
+      `} 
       ref={contentRef}
       dir={isHebrewSong ? 'rtl' : 'ltr'}
     >
-      {/* Connection status indicator */}
-      <div className={`fixed top-0 right-0 m-2 px-3 py-1 rounded-full text-xs flex items-center z-30
-          ${connectionStatus === 'connected' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}`}>
-        <span className={`w-2 h-2 rounded-full mr-2 ${connectionStatus === 'connecting' ? 'animate-pulse' : ''} ${
-          connectionStatus === 'connected' ? 'bg-success' : 'bg-warning'
-        }`}></span>
-        {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
+      {/* Scroll indicator */}
+      <div className="scroll-indicator">
+        <div 
+          className="scroll-indicator-thumb" 
+          style={{ height: `${scrollProgress}%` }}
+        />
       </div>
       
-      {/* High contrast toggle button */}
-      <button
-        onClick={toggleHighContrast}
-        className="fixed top-0 left-0 m-2 p-2 bg-gray-800 rounded-full z-30"
-        aria-label={highContrast ? "Disable high contrast mode" : "Enable high contrast mode"}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
-          <path d="M10 4a6 6 0 000 12V4z" />
-        </svg>
-      </button>
+      {/* Connection status indicator */}
+      <div className={`
+        fixed top-0 right-0 m-2 px-3 py-1 rounded-full text-xs flex items-center z-30
+        transition-all duration-300
+        ${connected 
+          ? 'bg-accent-green/20 text-accent-green shadow-glow-blue' 
+          : 'bg-accent-yellow/20 text-accent-yellow animate-pulse'
+        }
+      `}>
+        <span className={`
+          w-2 h-2 rounded-full mr-2
+          ${connected ? 'bg-accent-green' : 'bg-accent-yellow animate-pulse'}
+        `}></span>
+        {connected ? 'Connected' : 'Connecting...'}
+      </div>
       
       {/* Song info header */}
-      <header className="sticky top-0 shadow-md border-b border-gray-700 mb-4 bg-background z-10">
+      <header className="sticky top-0 z-10 bg-background bg-opacity-95 backdrop-blur-sm shadow-md border-b border-gray-700 mb-4 transition-all duration-300">
         <div className="container mx-auto px-4 py-4">
-          <h1 className={`${highContrast ? 'text-4xl' : 'text-3xl'} font-bold text-text-light`}>
+          <h1 className="text-3xl font-bold text-text-light mb-1 song-title transition-all duration-300">
             {song.title}
           </h1>
-          <p className={`${highContrast ? 'text-2xl' : 'text-xl'} text-text-muted`}>
+          <p className="text-xl text-text-muted transition-all duration-300">
             {song.artist}
           </p>
         </div>
@@ -238,28 +278,49 @@ const LivePage = () => {
         {/* Role-based content rendering */}
         {user?.instrument === 'vocals' ? (
           // Vocalist view - lyrics only
-          <div className="lyrics-content">
-            <h2 className={`${highContrast ? 'text-2xl' : 'text-xl'} mb-4 text-primary font-semibold`}>Lyrics</h2>
-            <pre className={`whitespace-pre-line ${lyricsClass} pb-8 ${highContrast ? 'text-white' : 'text-text-light'}`}>
+          <div className="lyrics-text animate-slide-up">
+            <h2 className="text-xl mb-4 instrument-accent font-semibold transition-all duration-300">
+              Lyrics
+            </h2>
+            <pre className="whitespace-pre-line text-xl pb-8 transition-all duration-300">
               {song.lyrics}
             </pre>
           </div>
         ) : (
           // Instrumentalist view - chords and lyrics
-          <div className="instrument-content">
+          <div className="animate-slide-up">
             <div className="mb-8">
-              <h2 className={`${highContrast ? 'text-2xl' : 'text-xl'} mb-4 text-primary font-semibold`}>Chords</h2>
-              <div className={`bg-surface-elevated p-4 rounded-lg overflow-x-auto ${highContrast ? 'bg-gray-900' : ''}`}>
-                <pre className={`whitespace-pre ${chordsClass} text-accent ${highContrast ? 'text-yellow-300' : ''}`}>
-                  {song.chords}
-                </pre>
+              <h2 className="text-xl mb-4 instrument-accent font-semibold transition-all duration-300">
+                Chords
+              </h2>
+              <div className="bg-surface-elevated p-4 rounded-lg overflow-x-auto shadow-md transition-all duration-300">
+                {/* Enhanced chord display - process chords inline */}
+                <div className="font-mono text-xl">
+                  {song.chords.split('\n').map((line, i) => {
+                    // Enhance chord display by identifying chords with regex
+                    const enhancedLine = line.replace(
+                      /([A-G][#b]?(?:maj|min|m|dim|aug|sus[24]|[2-9]|add[2-9]|\/[A-G][#b]?)*)/g, 
+                      '<span class="chord">$1</span>'
+                    );
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className="mb-1"
+                        dangerouslySetInnerHTML={{ __html: enhancedLine }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
             
             <div className="mb-8">
-              <h2 className={`${highContrast ? 'text-2xl' : 'text-xl'} my-4 text-primary font-semibold`}>Lyrics</h2>
-              <div className={isHebrewSong ? 'lyrics-hebrew' : ''}>
-                <pre className={`whitespace-pre-line ${lyricsClass} ${highContrast ? 'text-white' : 'text-text-light'}`}>
+              <h2 className="text-xl my-4 instrument-accent font-semibold transition-all duration-300">
+                Lyrics
+              </h2>
+              <div className={isHebrewSong ? 'rtl' : ''}>
+                <pre className="whitespace-pre-line text-xl transition-all duration-300">
                   {song.lyrics}
                 </pre>
               </div>
@@ -269,38 +330,26 @@ const LivePage = () => {
       </main>
 
       {/* Control panel */}
-      <div className="fixed bottom-0 inset-x-0 py-4 px-6 bg-surface shadow-lg border-t border-gray-700 z-20">
-        <div className="container mx-auto flex flex-wrap justify-between items-center gap-3">
-          {/* Auto-scroll controls */}
-          <div className="flex items-center space-x-2">
+      <div className="fixed bottom-0 inset-x-0 p-4 bg-surface shadow-lg border-t border-gray-700 z-20 backdrop-blur-sm transition-all duration-300">
+        <div className="container mx-auto flex justify-between items-center">
+          {/* Auto-scroll toggle with visualizer */}
+          <div className="flex items-center">
             <Button
               onClick={handleToggleAutoScroll}
               variant={autoScroll ? 'primary' : 'secondary'}
-              className={highContrast ? 'text-lg py-3 px-5' : ''}
+              className={`transition-all duration-300 ${autoScroll ? 'shadow-glow' : ''}`}
             >
-              {autoScroll ? 'Stop Scrolling' : 'Auto-Scroll'}
+              {autoScroll ? 'Stop Auto-Scroll' : 'Auto-Scroll'}
             </Button>
             
-            {/* Speed controls, only visible when auto-scroll is on */}
+            {/* Add visualizer when auto-scroll is on */}
             {autoScroll && (
-              <div className="flex items-center bg-gray-800 rounded p-1">
-                <button
-                  onClick={() => handleSpeedChange(Math.max(1, scrollSpeed - 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-700"
-                  aria-label="Decrease scroll speed"
-                  disabled={scrollSpeed <= 1}
-                >
-                  <span className="text-lg">-</span>
-                </button>
-                <span className="px-2 text-sm">Speed: {scrollSpeed}</span>
-                <button
-                  onClick={() => handleSpeedChange(Math.min(5, scrollSpeed + 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-700"
-                  aria-label="Increase scroll speed"
-                  disabled={scrollSpeed >= 5}
-                >
-                  <span className="text-lg">+</span>
-                </button>
+              <div className="scroll-visualizer">
+                <div className="visualizer-bar"></div>
+                <div className="visualizer-bar"></div>
+                <div className="visualizer-bar"></div>
+                <div className="visualizer-bar"></div>
+                <div className="visualizer-bar"></div>
               </div>
             )}
           </div>
@@ -310,7 +359,7 @@ const LivePage = () => {
             <Button
               onClick={handleQuitSong}
               variant="danger"
-              className={highContrast ? 'text-lg py-3 px-5' : ''}
+              className="transition-all duration-300 hover:shadow-glow-red"
             >
               End Song
             </Button>

@@ -92,3 +92,139 @@
     @apply lyrics-text rtl;
   }
 }
+
+/* Wave Background Effect */
+.wave-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(255, 85, 0, 0.1) 50.1%, transparent 60%),
+              radial-gradient(ellipse at center, transparent 0%, transparent 55%, rgba(0, 163, 255, 0.1) 55.1%, transparent 65%);
+  background-size: 50px 50px;
+  opacity: 0.05;
+  z-index: 0;
+  animation: wave 15s linear infinite;
+  pointer-events: none;
+}
+
+/* Chord Styling */
+.chord {
+  color: #FFD700;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.chord:hover {
+  color: #FF5500;
+  transform: translateY(-2px);
+}
+
+/* High Contrast Enhancements */
+.high-contrast .song-title {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.high-contrast pre {
+  font-size: 1.25rem;
+  line-height: 1.8;
+}
+
+.high-contrast .chord {
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+/* Scroll Position Indicator */
+.scroll-indicator {
+  position: fixed;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 150px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  z-index: 20;
+}
+
+.scroll-indicator-thumb {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background-color: #FF5500;
+  border-radius: 2px;
+  transition: height 0.1s ease-out;
+}
+
+/* RTL Enhancements */
+[dir="rtl"] .chord {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Musical Note Animation */
+.note-animation {
+  position: relative;
+}
+
+.note-animation::after {
+  content: '♪';
+  position: absolute;
+  color: rgba(255, 85, 0, 0.3);
+  font-size: 24px;
+  animation: float 3s ease-in-out infinite;
+  opacity: 0;
+}
+
+.note-animation:hover::after {
+  opacity: 1;
+}
+
+/* Instrument colors */
+.guitar-theme { --instrument-color: #FFA500; }
+.bass-theme { --instrument-color: #3D5AFE; }
+.drums-theme { --instrument-color: #FF1744; }
+.vocals-theme { --instrument-color: #AA00FF; }
+.keyboard-theme { --instrument-color: #00BFA5; }
+.saxophone-theme { --instrument-color: #FFD740; }
+.other-theme { --instrument-color: #FF5500; }
+
+.instrument-accent {
+  color: var(--instrument-color, #FF5500);
+}
+
+/* Autoscroll visualizer */
+.scroll-visualizer {
+  display: inline-flex;
+  align-items: flex-end;
+  height: 16px;
+  margin-left: 8px;
+}
+
+.visualizer-bar {
+  width: 2px;
+  margin: 0 1px;
+  background-color: #FF5500;
+  animation: visualizerPulse 1.2s ease-in-out infinite;
+}
+
+.visualizer-bar:nth-child(1) { height: 30%; animation-delay: 0.0s; }
+.visualizer-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+.visualizer-bar:nth-child(3) { height: 100%; animation-delay: 0.2s; }
+.visualizer-bar:nth-child(4) { height: 70%; animation-delay: 0.3s; }
+.visualizer-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
+
+@keyframes visualizerPulse {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
