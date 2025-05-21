@@ -6,18 +6,13 @@ import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import SongCard from '../../components/songs/SongCard';
-import { LoadingIndicator, Skeleton } from '../../components/ui/LoadingComponents';
+import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
-/**
- * ResultsAdmin displays search results and allows admin to select a song for rehearsal
- * Enhanced with better styling, accessibility, and smoky environment optimizations
- */
 const ResultsAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { socket, connected } = useSocket();
-  const { highContrast, fontSize } = useTheme();
+  const { highContrast } = useTheme();
   
   // State management
   const [loading, setLoading] = useState(true);
@@ -31,7 +26,6 @@ const ResultsAdmin = () => {
     isCreating: false,
     error: null
   });
-  const [selectedSongId, setSelectedSongId] = useState(null);
   
   // Get query from URL
   const query = new URLSearchParams(location.search).get('query') || '';
@@ -125,19 +119,14 @@ const ResultsAdmin = () => {
     getOrCreateSession();
   }, [getOrCreateSession]);
 
-  // Handle back navigation
   const handleBack = () => {
     navigate('/admin');
   };
 
-  // Handle song selection with improved feedback
   const handleSelectSong = async (songId) => {
     if (activeSessionState.isCreating) {
       return; // Do nothing if we're still creating a session
     }
-    
-    // Set selected song ID for visual feedback
-    setSelectedSongId(songId);
     
     try {
       if (!currentSession) {
@@ -152,9 +141,6 @@ const ResultsAdmin = () => {
       
       // Emit select_song event via socket
       if (socket && connected) {
-        // Show loading feedback for selection
-        setActiveSessionState(prev => ({ ...prev, isCreating: true }));
-        
         socket.emit('select_song', {
           sessionId: currentSession._id,
           songId
@@ -168,220 +154,215 @@ const ResultsAdmin = () => {
     } catch (error) {
       console.error('Error selecting song:', error);
       setError('Failed to select song. Please check your connection and try again.');
-      setSelectedSongId(null); // Clear selection on error
-      setActiveSessionState(prev => ({ ...prev, isCreating: false }));
     }
   };
 
-  // Handle language filter change
   const handleLanguageFilterChange = (e) => {
     setLanguageFilter(e.target.value);
   };
 
-  // Handle sort order change
   const handleSortOrderChange = (e) => {
     setSortOrder(e.target.value);
   };
 
-  // Handle retry session creation
   const handleRetrySession = () => {
     getOrCreateSession();
   };
 
-  // Get font size class for responsive text
-  const fontSizeClass = {
-    'normal': 'text-base',
-    'large': 'text-lg',
-    'x-large': 'text-xl'
-  }[fontSize] || 'text-base';
+  // Loading placeholder for song cards
+  const renderSongCardPlaceholders = () => {
+    return Array(6).fill(0).map((_, index) => (
+      <div key={`placeholder-${index}`} className="bg-surface rounded p-4">
+        <div className="flex items-start animate-pulse">
+          <div className="w-20 h-20 bg-gray-700 rounded mr-4"></div>
+          <div className="flex-1">
+            <div className="h-6 bg-gray-700 rounded mb-2 w-3/4"></div>
+            <div className="h-4 bg-gray-700 rounded mb-3 w-1/2"></div>
+            <div className="h-5 bg-gray-700 rounded w-16"></div>
+          </div>
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className={`min-h-screen bg-background p-4 ${highContrast ? 'high-contrast' : ''}`}>
-      <div className="container mx-auto max-w-6xl">
-        {/* Page header with back button and title */}
-        <header className="mb-8 animate-fade-in">
-          <Button 
-            onClick={handleBack}
-            variant="ghost"
-            className="mb-4 flex items-center group"
-            iconLeft={
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 group-hover:-translate-x-1 transition-transform">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            }
-          >
-            Back to Search
-          </Button>
-          
-          <h1 className={`text-2xl md:text-3xl font-bold text-text-light ${fontSizeClass}`}>
-            Results for <span className="text-primary">&ldquo;{query}&rdquo;</span>
-          </h1>
-        </header>
+      <header className="mb-6">
+        <Button 
+          onClick={handleBack}
+          variant="ghost"
+          className="mb-4 flex items-center"
+        >
+          <span className="mr-2">&#8592;</span> Back to Search
+        </Button>
+        
+        <h1 className="text-2xl font-bold text-text-light">
+          Results for &ldquo;{query}&rdquo;
+        </h1>
+      </header>
 
-        {/* Filters and session status bar */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-fade-in">
-          <Card variant="elevated" className="w-full md:w-auto p-4">
-            <div className="flex flex-wrap gap-4">
-              {/* Language filter */}
-              <div className="flex flex-col">
-                <label htmlFor="language-filter" className={`text-text-light mb-2 font-medium ${fontSizeClass}`}>
-                  Language
-                </label>
-                <div className="flex space-x-2">
-                  {['all', 'English', 'Hebrew'].map(lang => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguageFilter(lang)}
-                      className={`px-3 py-1.5 rounded-full border font-medium transition-colors
-                        ${languageFilter === lang 
-                          ? 'bg-primary text-white border-primary' 
-                          : 'bg-surface-elevated text-text-muted border-gray-700 hover:bg-gray-700'
-                        }
-                        ${fontSizeClass}
-                      `}
-                    >
-                      {lang === 'all' ? 'All' : lang}
-                    </button>
-                  ))}
+      {/* Filters and session status */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-wrap gap-3">
+          {/* Language filter */}
+          <div className="flex items-center">
+            <label htmlFor="language-filter" className="text-text-muted mr-2">
+              Language:
+            </label>
+            <select
+              id="language-filter"
+              value={languageFilter}
+              onChange={handleLanguageFilterChange}
+              className="bg-surface text-text-light p-2 rounded border border-gray-700"
+            >
+              <option value="all">All Languages</option>
+              <option value="English">English</option>
+              <option value="Hebrew">Hebrew</option>
+            </select>
+          </div>
+          
+          {/* Sort order */}
+          <div className="flex items-center">
+            <label htmlFor="sort-order" className="text-text-muted mr-2">
+              Sort by:
+            </label>
+            <select
+              id="sort-order"
+              value={sortOrder}
+              onChange={handleSortOrderChange}
+              className="bg-surface text-text-light p-2 rounded border border-gray-700"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="title">Song Title</option>
+              <option value="artist">Artist</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Session status indicator */}
+        <div className="flex items-center">
+          {activeSessionState.isCreating ? (
+            <div className="flex items-center text-text-muted">
+              <LoadingIndicator size="sm" className="mr-2" />
+              Preparing session...
+            </div>
+          ) : activeSessionState.error ? (
+            <div className="flex items-center">
+              <span className="text-error mr-2">{activeSessionState.error}</span>
+              <Button
+                onClick={handleRetrySession}
+                variant="secondary"
+                size="sm"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : currentSession ? (
+            <div className="flex items-center text-success">
+              <span className="w-2 h-2 bg-success rounded-full mr-2"></span>
+              Session ready
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <main>
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {renderSongCardPlaceholders()}
+          </div>
+        ) : error ? (
+          <Card className="p-4 mb-6 bg-error bg-opacity-20 border border-error">
+            <p className="text-error">{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="primary"
+              className="mt-3"
+            >
+              Refresh Page
+            </Button>
+          </Card>
+        ) : filteredResults.length === 0 ? (
+          <div className="text-center py-10 text-text-muted">
+            <p className="mb-4 text-xl">No songs found matching &ldquo;{query}&rdquo;</p>
+            {languageFilter !== 'all' && (
+              <p>Try changing your language filter or search for a different term</p>
+            )}
+            <Button
+              onClick={handleBack}
+              variant="primary"
+              className="mt-6"
+            >
+              New Search
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredResults.map(song => (
+              <div 
+                key={song._id}
+                onClick={() => handleSelectSong(song._id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelectSong(song._id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Select song: ${song.title} by ${song.artist}`}
+                className="bg-surface rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <div className="relative">
+                  {song.imageUrl ? (
+                    <img 
+                      src={song.imageUrl} 
+                      alt={song.title}
+                      className="w-full h-40 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-500">
+                      <span className="text-2xl">🎵</span>
+                    </div>
+                  )}
+                  <span className={`absolute top-2 right-2 px-2 py-1 text-xs rounded-full ${
+                    song.language === 'Hebrew' ? 'bg-accent text-black' : 'bg-success text-white'
+                  }`}>
+                    {song.language}
+                  </span>
+                </div>
+                
+                <div className="p-4">
+                  <h3 
+                    className="text-xl font-bold text-text-light mb-1 truncate" 
+                    dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}
+                  >
+                    {song.title}
+                  </h3>
+                  <p 
+                    className="text-text-muted truncate" 
+                    dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}
+                  >
+                    {song.artist}
+                  </p>
+                  
+                  {song.year && (
+                    <p className="text-text-muted text-sm mt-2">
+                      Year: {song.year}
+                    </p>
+                  )}
+                  
+                  {song.genre && (
+                    <p className="text-text-muted text-sm">
+                      Genre: {song.genre}
+                    </p>
+                  )}
                 </div>
               </div>
-              
-              {/* Sort order */}
-              <div className="flex flex-col">
-                <label htmlFor="sort-order" className={`text-text-light mb-2 font-medium ${fontSizeClass}`}>
-                  Sort by
-                </label>
-                <select
-                  id="sort-order"
-                  value={sortOrder}
-                  onChange={handleSortOrderChange}
-                  className={`bg-surface-elevated text-text-light p-2 rounded border border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary ${fontSizeClass}`}
-                >
-                  <option value="relevance">Relevance</option>
-                  <option value="title">Song Title</option>
-                  <option value="artist">Artist</option>
-                </select>
-              </div>
-            </div>
-          </Card>
-          
-          {/* Session status indicator */}
-          <Card variant={currentSession ? 'success' : activeSessionState.error ? 'error' : 'primary'} className="w-full md:w-auto p-4">
-            <div className="flex items-center">
-              {activeSessionState.isCreating ? (
-                <>
-                  <LoadingIndicator size="sm" className="mr-3" />
-                  <span className={`text-text-light ${fontSizeClass}`}>Preparing session...</span>
-                </>
-              ) : activeSessionState.error ? (
-                <>
-                  <span className={`text-error mr-3 ${fontSizeClass}`}>{activeSessionState.error}</span>
-                  <Button
-                    onClick={handleRetrySession}
-                    variant="primary"
-                    size="sm"
-                  >
-                    Retry
-                  </Button>
-                </>
-              ) : currentSession ? (
-                <>
-                  <div className="w-3 h-3 bg-success rounded-full mr-3 animate-pulse"></div>
-                  <span className={`text-text-light font-medium ${fontSizeClass}`}>Session ready</span>
-                </>
-              ) : null}
-            </div>
-          </Card>
-        </div>
-
-        {/* Main content area with results */}
-        <main className="animate-fade-in">
-          {loading ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {Array(6).fill(0).map((_, index) => (
-                <Skeleton 
-                  key={`skeleton-${index}`} 
-                  type="song-card" 
-                />
-              ))}
-            </div>
-          ) : error ? (
-            <Card variant="error" className="p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-3">Error Loading Results</h2>
-              <p className="text-error mb-4">{error}</p>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="primary"
-                >
-                  Refresh Page
-                </Button>
-                <Button
-                  onClick={handleBack}
-                  variant="secondary"
-                >
-                  Back to Search
-                </Button>
-              </div>
-            </Card>
-          ) : filteredResults.length === 0 ? (
-            <Card variant="elevated" className="p-8 text-center">
-              <div className="text-5xl mb-4">🔍</div>
-              <h2 className={`text-xl font-semibold mb-3 ${fontSizeClass}`}>No songs found</h2>
-              <p className={`text-text-muted mb-6 ${fontSizeClass}`}>
-                No songs found matching <span className="text-primary">&ldquo;{query}&rdquo;</span>
-                {languageFilter !== 'all' && (
-                  <> in {languageFilter}</>
-                )}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                {languageFilter !== 'all' && (
-                  <Button
-                    onClick={() => setLanguageFilter('all')}
-                    variant="secondary"
-                  >
-                    Show All Languages
-                  </Button>
-                )}
-                <Button
-                  onClick={handleBack}
-                  variant="primary"
-                >
-                  New Search
-                </Button>
-              </div>
-            </Card>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredResults.map(song => (
-                <SongCard
-                  key={song._id}
-                  song={song}
-                  onSelect={handleSelectSong}
-                  selected={selectedSongId === song._id}
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* Results count */}
-          {!loading && !error && filteredResults.length > 0 && (
-            <div className="mt-6 text-center text-text-muted">
-              Showing {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
-              {languageFilter !== 'all' ? ` in ${languageFilter}` : ''}
-            </div>
-          )}
-        </main>
-        
-        {/* Selection instructions */}
-        {!loading && !error && filteredResults.length > 0 && (
-          <div className="text-center mt-8 mb-6 p-4 border border-gray-700 rounded-lg bg-surface-elevated">
-            <p className={`text-text-light ${fontSizeClass}`}>
-              Select a song to start the rehearsal. All connected musicians will see the selected song.
-            </p>
+            ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
