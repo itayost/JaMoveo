@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const songController = require('../controllers/song.controller');
-const { protect, admin } = require('../middleware/authmiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // Routes accessible to authenticated users
 router.get('/', protect, songController.getSongs); // Search/get songs

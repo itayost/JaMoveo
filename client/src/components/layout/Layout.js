@@ -1,7 +1,5 @@
-// client/src/components/layout/Layout.js
 import React from 'react';
 import Navigation from '../shared/Navigation';
-import Footer from '../shared/Footer';
 import { useAuth } from '../../context/AuthContext';
 
 const Layout = ({ children }) => {
@@ -15,9 +13,6 @@ const Layout = ({ children }) => {
       <main className="container mx-auto px-4 py-4 flex-grow">
         {children}
       </main>
-      
-      {/* Always show Footer */}
-      <Footer />
     </div>
   );
 };

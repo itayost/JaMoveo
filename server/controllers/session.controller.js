@@ -1,56 +1,23 @@
-// server/controllers/session.controller.js
 const Session = require('../models/session.model');
-const User = require('../models/user.model');
 const Song = require('../models/song.model');
 const { asyncHandler } = require('../middleware/errorMiddleware');
 
 /**
- * @desc    Get active sessions
+ * @desc    Get active session
  * @route   GET /api/sessions/active
  * @access  Private
  */
 const getActiveSessions = asyncHandler(async (req, res) => {
-  const { latest = 'true' } = req.query;
-  const isLatestOnly = latest === 'true';
+  // Get most recent active session
+  const session = await Session.findOne({ isActive: true })
+    .sort({ createdAt: -1 })
+    .populate('admin', 'username')
+    .populate('activeSong', 'title artist language');
   
-  if (isLatestOnly) {
-    // Get most recent active session using the isActive + createdAt index
-    const session = await Session.findOne({ isActive: true })
-      .sort({ createdAt: -1 })
-      .populate('admin', 'username')
-      .populate('activeSong', 'title artist language')
-      .populate('connectedUsers.user', 'username instrument otherInstrument');
-    
-    res.json({
-      success: true,
-      session
-    });
-  } else {
-    // Get all active sessions using the isActive index
-    // Use lean() for better performance when just reading data
-    const sessions = await Session.find({ isActive: true })
-      .lean()
-      .sort({ createdAt: -1 })
-      .populate('admin', 'username')
-      .populate('activeSong', 'title artist')
-      .select('-connectedUsers');
-    
-    // Add connected users count
-    const sessionsWithCount = await Promise.all(
-      sessions.map(async (session) => {
-        const fullSession = await Session.findById(session._id);
-        return {
-          ...session,
-          connectedUsers: fullSession.connectedUsers.length
-        };
-      })
-    );
-    
-    res.json({
-      success: true,
-      sessions: sessionsWithCount
-    });
-  }
+  res.json({
+    success: true,
+    session
+  });
 });
 
 /**
@@ -59,18 +26,9 @@ const getActiveSessions = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const getSessionById = asyncHandler(async (req, res) => {
-  // Validate ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
   const session = await Session.findById(req.params.id)
     .populate('admin', 'username')
-    .populate('activeSong', 'title artist language')
-    .populate('connectedUsers.user', 'username instrument otherInstrument');
+    .populate('activeSong', 'title artist language');
   
   if (!session) {
     return res.status(404).json({
@@ -99,27 +57,15 @@ const createSession = asyncHandler(async (req, res) => {
     });
   }
   
-  const { name } = req.body;
-  
   // Create session
   const session = await Session.create({
-    name: name || `Rehearsal ${new Date().toLocaleString()}`,
+    name: `Rehearsal ${new Date().toLocaleString()}`,
     admin: req.user._id,
     isActive: true
   });
   
   // Populate admin details
   await session.populate('admin', 'username');
-  
-  // Get Socket.io instance to emit events
-  const io = req.app.get('io');
-  if (io) {
-    io.emit('session_created', {
-      sessionId: session._id,
-      name: session.name,
-      admin: session.admin
-    });
-  }
   
   res.status(201).json({
     success: true,
@@ -140,14 +86,6 @@ const createSession = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const joinSession = asyncHandler(async (req, res) => {
-  // Validate ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
   const session = await Session.findById(req.params.id)
     .populate('activeSong', 'title artist language');
   
@@ -165,9 +103,6 @@ const joinSession = asyncHandler(async (req, res) => {
     });
   }
   
-  // HTTP join doesn't require socket ID - will be added via WebSocket connection
-  // But we can prepare the response with current session state
-  
   res.json({
     success: true,
     message: 'Joined session successfully',
@@ -175,8 +110,7 @@ const joinSession = asyncHandler(async (req, res) => {
       id: session._id,
       name: session.name,
       activeSong: session.activeSong,
-      isActive: session.isActive,
-      connectedUsers: session.connectedUsers.length
+      isActive: session.isActive
     }
   });
 });
@@ -187,14 +121,6 @@ const joinSession = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const endSession = asyncHandler(async (req, res) => {
-  // Validate ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
   const session = await Session.findById(req.params.id);
   
   if (!session) {
@@ -212,14 +138,6 @@ const endSession = asyncHandler(async (req, res) => {
     });
   }
   
-  // Check if user is the session admin
-  if (session.admin.toString() !== req.user._id.toString()) {
-    return res.status(403).json({
-      success: false,
-      message: 'Only the session admin can end this session'
-    });
-  }
-  
   // End the session
   session.isActive = false;
   session.endedAt = new Date();
@@ -228,10 +146,7 @@ const endSession = asyncHandler(async (req, res) => {
   // Get Socket.io instance to emit events
   const io = req.app.get('io');
   if (io) {
-    io.to(session._id.toString()).emit('session_ended', { 
-      sessionId: session._id.toString(),
-      endedAt: session.endedAt
-    });
+    io.to(session._id.toString()).emit('session_ended');
   }
   
   res.json({
@@ -246,22 +161,6 @@ const endSession = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const setActiveSong = asyncHandler(async (req, res) => {
-  // Validate session ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
-  // Validate song ObjectId format
-  if (!req.params.songId.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid song ID format'
-    });
-  }
-  
   // Verify user is admin
   if (!req.user.isAdmin) {
     return res.status(403).json({
@@ -276,22 +175,6 @@ const setActiveSong = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Session not found'
-    });
-  }
-  
-  // Check if user is the session admin
-  if (session.admin.toString() !== req.user._id.toString()) {
-    return res.status(403).json({
-      success: false,
-      message: 'Only the session admin can set active songs'
-    });
-  }
-  
-  // Check if session is active
-  if (!session.isActive) {
-    return res.status(400).json({
-      success: false,
-      message: 'Cannot set song for inactive session'
     });
   }
   
@@ -341,14 +224,6 @@ const setActiveSong = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const clearActiveSong = asyncHandler(async (req, res) => {
-  // Validate ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
   // Verify user is admin
   if (!req.user.isAdmin) {
     return res.status(403).json({
@@ -363,14 +238,6 @@ const clearActiveSong = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Session not found'
-    });
-  }
-  
-  // Check if user is the session admin
-  if (session.admin.toString() !== req.user._id.toString()) {
-    return res.status(403).json({
-      success: false,
-      message: 'Only the session admin can clear active songs'
     });
   }
   
@@ -391,43 +258,6 @@ const clearActiveSong = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * @desc    Get connected users in a session
- * @route   GET /api/sessions/:id/users
- * @access  Private
- */
-const getSessionUsers = asyncHandler(async (req, res) => {
-  // Validate ObjectId format
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid session ID format'
-    });
-  }
-  
-  const session = await Session.findById(req.params.id)
-    .populate('connectedUsers.user', 'username instrument otherInstrument');
-  
-  if (!session) {
-    return res.status(404).json({
-      success: false,
-      message: 'Session not found'
-    });
-  }
-  
-  res.json({
-    success: true,
-    users: session.connectedUsers.map(connection => ({
-      id: connection.user._id,
-      username: connection.user.username,
-      instrument: connection.user.instrument,
-      otherInstrument: connection.user.otherInstrument,
-      joinedAt: connection.joinedAt
-    })),
-    count: session.connectedUsers.length
-  });
-});
-
 module.exports = {
   getActiveSessions,
   getSessionById,
@@ -435,6 +265,5 @@ module.exports = {
   joinSession,
   endSession,
   setActiveSong,
-  clearActiveSong,
-  getSessionUsers
+  clearActiveSong
 };

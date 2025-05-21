@@ -3,36 +3,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import fonts from Google Fonts - enhance with display=swap for better loading */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600;700&family=Roboto+Mono&family=Montserrat:wght@500;600;700&display=swap');
+/* Import fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600;700&display=swap');
 
 /* Custom base styles */
 @layer base {
   html {
     @apply text-text-light bg-background;
-    scroll-behavior: smooth; /* Default smooth scrolling */
-    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    scroll-behavior: smooth;
   }
   
   body {
-    @apply antialiased text-base; /* Smoother text rendering */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    @apply antialiased text-base;
   }
   
   h1 {
-    @apply text-2xl md:text-3xl font-bold mb-4 font-display;
+    @apply text-2xl md:text-3xl font-bold mb-4;
   }
   
   h2 {
-    @apply text-xl md:text-2xl font-semibold mb-3 font-display;
-  }
-  
-  h3 {
-    @apply text-lg md:text-xl font-medium mb-2 font-display;
+    @apply text-xl md:text-2xl font-semibold mb-3;
   }
 
   p {
-    @apply mb-4 leading-relaxed;
+    @apply mb-4;
   }
   
   a {
@@ -40,149 +34,39 @@
     &:hover {
       @apply text-primary-light;
     }
-    &:focus {
-      @apply outline-none ring-2 ring-primary ring-opacity-50;
-    }
-  }
-
-  /* Focus styles for better accessibility */
-  :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-opacity-75;
   }
 }
 
 /* Custom component classes */
 @layer components {
-  /* Button variants with consistent styling */
-  .btn {
-    @apply px-4 py-2 rounded font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 inline-flex items-center justify-center;
-    &:disabled {
-      @apply opacity-50 cursor-not-allowed;
-    }
-  }
-  
+  /* Button styles */
   .btn-primary {
-    @apply btn bg-primary text-white hover:bg-primary-dark focus:ring-primary active:bg-primary-900 shadow-sm;
+    @apply px-4 py-2 rounded bg-primary text-white hover:bg-primary-dark transition-colors;
   }
   
   .btn-secondary {
-    @apply btn bg-gray-700 text-white hover:bg-gray-600 focus:ring-gray-500 active:bg-gray-800 shadow-sm;
-  }
-  
-  .btn-accent {
-    @apply btn bg-accent text-secondary-dark hover:bg-accent-dark focus:ring-accent active:bg-accent-dark shadow-sm;
-  }
-
-  .btn-outline {
-    @apply btn bg-transparent border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary active:bg-primary/20;
-  }
-  
-  .btn-ghost {
-    @apply btn bg-transparent text-primary hover:bg-primary/10 focus:ring-primary active:bg-primary/20;
+    @apply px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600 transition-colors;
   }
   
   .btn-danger {
-    @apply btn bg-error text-white hover:bg-error-dark focus:ring-error active:bg-error-dark shadow-sm;
+    @apply px-4 py-2 rounded bg-error text-white hover:bg-error-dark transition-colors;
   }
   
   /* Form elements */
   .form-input {
-    @apply w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200;
-    &:disabled {
-      @apply opacity-50 cursor-not-allowed;
-    }
-  }
-  
-  .form-label {
-    @apply block text-gray-300 mb-2 font-medium;
-  }
-  
-  .form-select {
-    @apply form-input appearance-none bg-no-repeat;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 0.5rem center;
-    background-size: 1.5em 1.5em;
-  }
-  
-  .form-checkbox {
-    @apply rounded border-gray-600 text-primary focus:ring-primary;
-  }
-  
-  /* Card styles */
-  .card {
-    @apply card-base p-4;
-  }
-  
-  .card-hover {
-    @apply card-elevated p-4 hover:shadow-glow-light;
-  }
-  
-  /* Song item in results list with enhanced hover effects */
-  .song-item {
-    @apply bg-surface rounded-lg p-4 cursor-pointer transition-all duration-200 overflow-hidden border border-transparent;
-    &:hover {
-      @apply bg-surface-elevated transform translate-y-[-2px] shadow-glow-light border-primary/20;
-    }
-    &:active {
-      @apply transform translate-y-0;
-    }
-  }
-  
-  /* Status badges/pills */
-  .status-badge {
-    @apply px-2 py-1 rounded-full text-xs font-medium inline-flex items-center;
-  }
-  
-  .status-badge-success {
-    @apply status-badge bg-success/20 text-success border border-success/30;
-  }
-  
-  .status-badge-error {
-    @apply status-badge bg-error/20 text-error border border-error/30;
-  }
-  
-  .status-badge-warning {
-    @apply status-badge bg-warning/20 text-warning-dark border border-warning/30;
-  }
-  
-  .status-badge-info {
-    @apply status-badge bg-info/20 text-info border border-info/30;
+    @apply w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-primary;
   }
   
   /* High contrast mode for smoky environments */
   .high-contrast {
-    @apply bg-black text-white high-contrast-mode;
+    @apply bg-black text-white;
     font-size: 1.2rem;
     line-height: 1.6;
-    
-    /* Enhance contrast for all interactive elements */
-    .btn-primary, .btn-secondary, .btn-accent, .btn-danger {
-      @apply border border-white/20 font-bold;
-    }
-    
-    /* Increase visibility of cards */
-    .card, .card-hover, .song-item {
-      @apply border border-white/20;
-    }
-    
-    /* Make form elements more visible */
-    .form-input, .form-select {
-      @apply border-2 border-white/30 bg-black;
-    }
   }
   
   /* Live page specific styles */
-  .live-header {
-    @apply sticky top-0 z-10 bg-background p-4 border-b border-gray-700 backdrop-blur-md bg-opacity-90;
-  }
-  
-  .live-controls {
-    @apply fixed bottom-0 left-0 right-0 p-4 bg-surface shadow-lg border-t border-gray-700 z-20;
-  }
-  
-  /* Autoscroll control panel */
-  .autoscroll-controls {
-    @apply flex items-center space-x-2 bg-surface-elevated p-2 rounded-lg;
+  .sticky-header {
+    @apply sticky top-0 z-10 bg-background p-4 border-b border-gray-700 bg-opacity-90;
   }
 }
 
@@ -199,94 +83,12 @@
     text-align: left;
   }
   
-  /* Bilingual text utilities */
-  .text-hebrew {
-    @apply font-hebrew rtl;
-  }
-  
-  .text-english {
-    @apply font-sans ltr;
-  }
-  
-  /* Text overflow with ellipsis */
-  .text-ellipsis {
-    @apply overflow-hidden whitespace-nowrap text-ellipsis;
-  }
-  
-  /* Auto-scroll related utilities */
-  .scroll-container {
-    @apply overflow-y-auto scroll-smooth;
-    scroll-behavior: smooth;
-  }
-  
-  .scroll-visible {
-    @apply scroll-container scrollbar-visible;
-  }
-  
-  /* Make scrollbars more visible in smoky environments */
-  .scrollbar-visible {
-    scrollbar-width: thin;
-    scrollbar-color: theme('colors.primary.DEFAULT') theme('colors.surface.dark');
-    
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background-color: theme('colors.primary.DEFAULT');
-      border-radius: 4px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background-color: theme('colors.surface.dark');
-      border-radius: 4px;
-    }
-  }
-  
-  /* Lyrics formatting */
+  /* Text classes */
   .lyrics-text {
-    @apply whitespace-pre-line font-sans text-xl leading-relaxed;
+    @apply whitespace-pre-line text-xl leading-relaxed;
   }
   
   .lyrics-hebrew {
-    @apply lyrics-text font-hebrew rtl;
-  }
-  
-  /* Chord formatting */
-  .chord-text {
-    @apply font-mono whitespace-pre text-xl leading-relaxed text-accent font-medium;
-  }
-  
-  /* For sticky headers */
-  .sticky-header {
-    @apply sticky top-0 z-10 bg-background py-2 backdrop-blur-sm bg-opacity-90;
-  }
-  
-  /* For the fixed footer in LivePage */
-  .fixed-footer {
-    @apply fixed bottom-0 left-0 right-0 bg-surface border-t border-gray-700 py-3 px-4 shadow-lg z-20;
-  }
-  
-  /* Focused interactive elements */
-  .focus-visible {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
-  }
-  
-  /* Animations for UI elements */
-  .animate-in {
-    @apply animate-fade-in;
-  }
-  
-  .animate-in-up {
-    @apply animate-slide-up;
-  }
-  
-  .animate-in-right {
-    @apply animate-slide-in-right;
-  }
-  
-  .animate-in-left {
-    @apply animate-slide-in-left;
+    @apply lyrics-text rtl;
   }
 }
