@@ -317,16 +317,18 @@ const getMe = async (req, res) => {
   }
 };
 
+// server/controllers/auth.controller.js
 // @desc    Logout user / clear cookie
 // @route   POST /api/auth/logout
 // @access  Private
-const logout = (req, res) => {
+const logout = async (req, res) => {
   try {
-    // Clear cookie if it exists
-    if (req.cookies.token) {
+    // Check if cookies exist before trying to clear them
+    if (req.cookies && req.cookies.token) {
       res.clearCookie('token');
     }
 
+    // Return success response
     res.json({
       success: true,
       message: 'Logged out successfully'
@@ -335,7 +337,7 @@ const logout = (req, res) => {
     console.error('Logout error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Error during logout',
       error: process.env.NODE_ENV === 'production' ? null : error.message
     });
   }

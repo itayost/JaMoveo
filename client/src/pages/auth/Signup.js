@@ -1,6 +1,10 @@
 // client/src/pages/auth/Signup.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +13,10 @@ const Signup = () => {
     confirmPassword: '',
     instrument: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,71 +26,102 @@ const Signup = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Signup attempt:', formData);
-    // This will be replaced with actual API call later
-    alert('Signup successful! Please log in.');
-    navigate('/login');
+    
+    // Validate password match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    // Validate instrument selection
+    if (!formData.instrument) {
+      setError('Please select your instrument');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Only send required fields to API
+      const registrationData = {
+        username: formData.username,
+        password: formData.password,
+        instrument: formData.instrument,
+        otherInstrument: formData.instrument === 'other' ? formData.otherInstrument : undefined
+      };
+      
+      const success = await register(registrationData);
+      
+      if (success) {
+        // Registration successful, redirect to login
+        navigate('/login', { 
+          state: { 
+            message: 'Registration successful! Please log in.' 
+          } 
+        });
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('An error occurred during registration. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-gray-800 p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-6">JaMoveo</h1>
-        <h2 className="text-xl font-semibold text-center mb-6">Sign Up</h2>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="max-w-md w-full p-8">
+        <h1 className="text-3xl font-bold text-center text-text-light mb-6">JaMoveo</h1>
+        <h2 className="text-xl font-semibold text-center text-text-light mb-6">Sign Up</h2>
+        
+        {error && (
+          <div className="bg-error bg-opacity-20 text-error p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="username">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Choose a username"
-              required
-            />
-          </div>
+          <Input
+            id="username"
+            name="username"
+            label="Username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Choose a username"
+            disabled={loading}
+            required
+          />
+          
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Choose a password"
+            disabled={loading}
+            required
+            autoComplete="new-password"
+          />
+          
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            label="Confirm Password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm your password"
+            disabled={loading}
+            required
+          />
           
           <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="password">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Choose a password"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="confirmPassword">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-gray-300 mb-2" htmlFor="instrument">
+            <label htmlFor="instrument" className="block text-gray-300 mb-2">
               I play...
             </label>
             <select
@@ -90,7 +129,8 @@ const Signup = () => {
               name="instrument"
               value={formData.instrument}
               onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
+              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-primary"
+              disabled={loading}
               required
             >
               <option value="">Select your instrument</option>
@@ -104,32 +144,40 @@ const Signup = () => {
             </select>
           </div>
           
-          <button
+          {formData.instrument === 'other' && (
+            <Input
+              id="otherInstrument"
+              name="otherInstrument"
+              label="Specify Instrument"
+              value={formData.otherInstrument || ''}
+              onChange={handleChange}
+              placeholder="What instrument do you play?"
+              disabled={loading}
+              required
+            />
+          )}
+          
+          <Button
             type="submit"
-            className="w-full p-3 rounded bg-yellow-600 text-white font-bold hover:bg-yellow-700"
+            variant="primary"
+            size="full"
+            disabled={loading}
+            loading={loading}
+            className="mt-6"
           >
-            Sign Up
-          </button>
+            {loading ? 'Creating Account...' : 'Sign Up'}
+          </Button>
         </form>
         
         <div className="mt-6 text-center">
           <p className="text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-yellow-500 hover:underline">
+            <Link to="/login" className="text-primary hover:underline">
               Log In
             </Link>
           </p>
         </div>
-        
-        <div className="mt-4 text-center">
-          <p className="text-gray-400">
-            Are you an admin?{' '}
-            <Link to="/admin-signup" className="text-yellow-500 hover:underline">
-              Admin Sign Up
-            </Link>
-          </p>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 };

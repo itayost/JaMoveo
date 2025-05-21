@@ -1,8 +1,8 @@
-// client/src/components/routing/ProtectedRoute.js
+// client/src/utils/ProtectedRoute.js
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import LoadingScreen from '../ui/LoadingScreen';
+import { useAuth } from '../context/AuthContext';
+import LoadingScreen from '../components/ui/LoadingScreen';
 
 /**
  * ProtectedRoute component to control access to routes based on user authentication and role

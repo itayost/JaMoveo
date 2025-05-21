@@ -4,6 +4,10 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Session = require('../models/session.model');
 
+const isUserAdmin = (socket) => {
+  return socket.user && socket.user.isAdmin === true;
+};
+
 const setupSocket = (server) => {
   const io = socketIo(server, {
     cors: {
@@ -129,9 +133,9 @@ socket.on('select_song', async (data) => {
   try {
     const { sessionId, songId } = data;
     
-    // Verify user is admin
-    if (!socket.user.isAdmin) {
-      socket.emit('error', { message: 'Unauthorized: Admin only' });
+    //Admin verification
+    if (!isUserAdmin(socket)) {
+      socket.emit('error', { message: 'Unauthorized: Admin privileges required' });
       return;
     }
     

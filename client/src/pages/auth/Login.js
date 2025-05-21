@@ -1,6 +1,6 @@
 // client/src/pages/auth/Login.js
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -9,31 +9,44 @@ import Input from '../../components/ui/Input';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  
+  const { login, error: authError, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get return path from location state (if available)
+  const from = location.state?.from || (user?.isAdmin ? '/admin' : '/player');
+
+  // Handle auth errors
+  useEffect(() => {
+    if (authError) {
+      setLoginError(authError);
+    }
+  }, [authError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!username || !password) {
-      setError('Please enter both username and password');
+      setLoginError('Please enter both username and password');
       return;
     }
     
     try {
       setLoading(true);
+      setLoginError('');
+      
       const success = await login(username, password);
       
       if (success) {
-        // Redirect will happen automatically based on user role
-      } else {
-        setError('Login failed. Please check your credentials.');
+        // Navigate to appropriate page after login
+        navigate(from, { replace: true });
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login. Please try again.');
+      setLoginError('An error occurred during login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -45,9 +58,9 @@ const Login = () => {
         <h1 className="text-3xl font-bold text-center text-text-light mb-6">JaMoveo</h1>
         <h2 className="text-xl font-semibold text-center text-text-light mb-6">Log In</h2>
         
-        {error && (
-          <div className="bg-error text-white p-3 rounded mb-4">
-            {error}
+        {loginError && (
+          <div className="bg-error bg-opacity-20 text-error p-3 rounded mb-4">
+            {loginError}
           </div>
         )}
         
@@ -69,6 +82,7 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
             disabled={loading}
+            autoComplete="current-password"
           />
           
           <Button
@@ -76,6 +90,7 @@ const Login = () => {
             variant="primary"
             size="full"
             disabled={loading}
+            loading={loading}
             className="mt-6"
           >
             {loading ? 'Logging in...' : 'Log In'}

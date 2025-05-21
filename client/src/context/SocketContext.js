@@ -1,3 +1,4 @@
+// client/src/context/SocketContext.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -22,24 +23,33 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    // Create socket connection
-    const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
-      auth: { token }
+    // Connect to Socket.IO server
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
+    console.log('Connecting to Socket.IO server at:', SOCKET_URL);
+
+    // Create socket connection with auth token
+    const newSocket = io(SOCKET_URL, {
+      auth: { token },
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
     // Set up event listeners
     newSocket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Socket connected with ID:', newSocket.id);
       setConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
       setConnected(false);
     });
 
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected. Reason:', reason);
+      setConnected(false);
     });
 
     // Save socket to state
@@ -47,6 +57,7 @@ export const SocketProvider = ({ children }) => {
 
     // Clean up on unmount
     return () => {
+      console.log('SocketProvider unmounting - disconnecting socket');
       newSocket.disconnect();
     };
   }, [user, token]);
@@ -58,3 +69,5 @@ export const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
+
+export default SocketContext;

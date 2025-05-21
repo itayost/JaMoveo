@@ -1,6 +1,10 @@
 // client/src/pages/auth/AdminSignup.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 
 const AdminSignup = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +13,10 @@ const AdminSignup = () => {
     confirmPassword: '',
     adminCode: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const { registerAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,102 +26,131 @@ const AdminSignup = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Admin signup attempt:', formData);
-    // This will be replaced with actual API call later
-    alert('Admin signup successful! Please log in.');
-    navigate('/login');
+    
+    // Validate password match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    // Validate admin code
+    if (!formData.adminCode) {
+      setError('Please enter the admin registration code');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Only send required fields to API
+      const registrationData = {
+        username: formData.username,
+        password: formData.password,
+        adminCode: formData.adminCode
+      };
+      
+      const success = await registerAdmin(registrationData);
+      
+      if (success) {
+        // Registration successful, redirect to login
+        navigate('/login', { 
+          state: { 
+            message: 'Admin registration successful! Please log in.' 
+          } 
+        });
+      }
+    } catch (err) {
+      console.error('Admin registration error:', err);
+      setError('An error occurred during admin registration. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-gray-800 p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-6">JaMoveo</h1>
-        <h2 className="text-xl font-semibold text-center mb-6">Admin Sign Up</h2>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="max-w-md w-full p-8">
+        <h1 className="text-3xl font-bold text-center text-text-light mb-6">JaMoveo</h1>
+        <h2 className="text-xl font-semibold text-center text-text-light mb-6">Admin Sign Up</h2>
+        
+        {error && (
+          <div className="bg-error bg-opacity-20 text-error p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="username">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Choose a username"
-              required
-            />
-          </div>
+          <Input
+            id="username"
+            name="username"
+            label="Username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Choose a username"
+            disabled={loading}
+            required
+          />
           
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="password">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Choose a password"
-              required
-            />
-          </div>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Choose a password"
+            disabled={loading}
+            required
+          />
           
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="confirmPassword">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            label="Confirm Password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm your password"
+            disabled={loading}
+            required
+            autoComplete="current-password"
+          />
           
-          <div className="mb-6">
-            <label className="block text-gray-300 mb-2" htmlFor="adminCode">
-              Admin Code
-            </label>
-            <input
-              type="text"
-              id="adminCode"
-              name="adminCode"
-              value={formData.adminCode}
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-yellow-500"
-              placeholder="Enter admin code"
-              required
-            />
-          </div>
+          <Input
+            id="adminCode"
+            name="adminCode"
+            label="Admin Registration Code"
+            value={formData.adminCode}
+            onChange={handleChange}
+            placeholder="Enter the admin code"
+            disabled={loading}
+            required
+          />
           
-          <button
+          <Button
             type="submit"
-            className="w-full p-3 rounded bg-yellow-600 text-white font-bold hover:bg-yellow-700"
+            variant="primary"
+            size="full"
+            disabled={loading}
+            loading={loading}
+            className="mt-6"
           >
-            Create Admin Account
-          </button>
+            {loading ? 'Creating Admin Account...' : 'Create Admin Account'}
+          </Button>
         </form>
         
         <div className="mt-6 text-center">
           <p className="text-gray-400">
             Not an admin?{' '}
-            <Link to="/signup" className="text-yellow-500 hover:underline">
+            <Link to="/signup" className="text-primary hover:underline">
               Regular Sign Up
             </Link>
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
