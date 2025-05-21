@@ -43,7 +43,6 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ isAdmin: 1 });
 userSchema.index({ instrument: 1 });
 
