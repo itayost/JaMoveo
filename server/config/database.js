@@ -3,9 +3,14 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    // Add more robust connection options for production
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 30000
+      // These options ensure robust connection handling
+      serverSelectionTimeoutMS: 30000, // Timeout after 30 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      connectTimeoutMS: 30000, // Give up initial connection after 30 seconds
+      // Auto-index creation is set to true for development but should be false in production
+      autoIndex: process.env.NODE_ENV !== 'production'
     });
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -15,15 +20,29 @@ const connectDB = async () => {
     require('../models/song.model');
     require('../models/session.model');
     
-    // On successful connection, create indexes (in background)
+    // Event listeners for connection status
     mongoose.connection.on('connected', () => {
-      console.log('Creating indexes in the background...');
-      mongoose.models.User?.createIndexes();
-      mongoose.models.Song?.createIndexes();
-      mongoose.models.Session?.createIndexes();
+      console.log('Mongoose connected to MongoDB');
     });
+    
+    mongoose.connection.on('error', (err) => {
+      console.error(`Mongoose connection error: ${err}`);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('Mongoose disconnected');
+    });
+    
+    // Handle application termination - close mongoose connection
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('Mongoose connection closed due to application termination');
+      process.exit(0);
+    });
+    
+    return conn;
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error connecting to MongoDB: ${error.message}`);
     process.exit(1);
   }
 };

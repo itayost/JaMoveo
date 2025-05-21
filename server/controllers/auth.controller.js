@@ -1,5 +1,5 @@
 // server/controllers/auth.controller.js
-const User = require('../models/user.model');
+const User = require('../models/user.model').default;
 const jwt = require('jsonwebtoken');
 
 // Generate JWT

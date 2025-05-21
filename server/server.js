@@ -1,10 +1,13 @@
-// server/server.js - Add Socket.IO setup
+// server/server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 const mongoose = require('mongoose');
 const path = require('path');
-const http = require('http'); // Add this for Socket.IO
+const socketIo = require('socket.io');
+const connectDB = require('./config/database');
+const setupSocket = require('./socket');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -12,125 +15,128 @@ const userRoutes = require('./routes/user.routes');
 const songRoutes = require('./routes/song.routes');
 const sessionRoutes = require('./routes/session.routes');
 
+// Import middleware
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+
 // Create Express app
 const app = express();
 
-// Create HTTP server using Express app
+// Create HTTP server
 const server = http.createServer(app);
 
-// Configure CORS
+// Connect to MongoDB
+connectDB();
+
+// Configure CORS with more robust options
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CLIENT_URL 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: function (origin, callback) {
+    // In production, restrict to specific origins
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+      ? [process.env.CLIENT_URL].filter(Boolean) // Filter out undefined/empty
+      : [
+          'http://localhost:3000',         // Standard React dev server
+          'http://127.0.0.1:3000',         // Alternative local address
+          'http://localhost:5173',         // Vite dev server
+          'http://localhost:8080'          // Another common dev port
+        ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  credentials: true,           // Allow cookies to be sent with requests
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400                // Cache preflight requests for 24 hours
 };
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Setup Socket.IO with CORS options
-const { Server } = require('socket.io');
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? process.env.CLIENT_URL 
-      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
+// Request parsing middleware
+app.use(express.json({ limit: '1mb' }));  // Limit JSON payload size
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-  
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+// Request logging middleware for development
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.originalUrl}`);
+    next();
   });
-  
-  // Add your socket event handlers here
-  socket.on('join_session', (sessionId) => {
-    console.log(`User ${socket.id} joined session ${sessionId}`);
-    socket.join(sessionId);
-    socket.to(sessionId).emit('user_joined', { socketId: socket.id });
-  });
-  
-  socket.on('leave_session', (sessionId) => {
-    console.log(`User ${socket.id} left session ${sessionId}`);
-    socket.leave(sessionId);
-    socket.to(sessionId).emit('user_left', { socketId: socket.id });
-  });
-  
-  socket.on('select_song', (data) => {
-    console.log(`Admin selected song ${data.songId} in session ${data.sessionId}`);
-    io.to(data.sessionId).emit('song_selected', { songId: data.songId });
-  });
-  
-  socket.on('quit_song', (sessionId) => {
-    console.log(`Admin ended song in session ${sessionId}`);
-    io.to(sessionId).emit('song_quit');
-  });
-  
-  socket.on('toggle_autoscroll', (data) => {
-    console.log(`Auto-scroll toggled in session ${data.sessionId}`);
-    socket.to(data.sessionId).emit('autoscroll_state', { 
-      enabled: data.enabled, 
-      speed: data.speed 
-    });
-  });
-});
+}
 
-// Basic middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Rate limiting middleware for production
+if (process.env.NODE_ENV === 'production') {
+  const rateLimit = require('express-rate-limit');
+  
+  // Apply rate limiting to auth routes
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,                  // 100 requests per window
+    message: 'Too many requests from this IP, please try again later'
+  });
+  
+  app.use('/api/auth', authLimiter);
+}
 
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/jamoveo')
-  .then(() => console.log('MongoDB Connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+// Security middleware for production
+if (process.env.NODE_ENV === 'production') {
+  const helmet = require('helmet');
+  app.use(helmet());
+}
 
-// API routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/sessions', sessionRoutes);
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
+  // Set static folder
   app.use(express.static(path.join(__dirname, '../client/build')));
   
+  // Any route that doesn't match the API routes will be handled by the React app
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client/build/index.html'));
+    res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
   });
 }
 
+// Not Found middleware
+app.use(notFound);
+
 // Error handling middleware
-app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `API not found: ${req.method} ${req.originalUrl}`
-  });
-});
+app.use(errorHandler);
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Server error',
-    error: process.env.NODE_ENV === 'production' ? null : err.message
-  });
-});
+// Set up Socket.io
+const io = setupSocket(server);
 
-// Start server using the HTTP server (not the Express app directly)
+// Start server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
 
-module.exports = app;
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+  // Don't crash in production, but log the error
+  if (process.env.NODE_ENV !== 'production') {
+    server.close(() => process.exit(1));
+  }
+});
+
+module.exports = { app, server };  // Export for testing
