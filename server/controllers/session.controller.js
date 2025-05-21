@@ -1,3 +1,4 @@
+// server/controllers/session.controller.js
 const Session = require('../models/session.model');
 const Song = require('../models/song.model');
 const { asyncHandler } = require('../middleware/errorMiddleware');
@@ -7,35 +8,12 @@ const { asyncHandler } = require('../middleware/errorMiddleware');
  * @route   GET /api/sessions/active
  * @access  Private
  */
-const getActiveSessions = asyncHandler(async (req, res) => {
+const getActiveSession = asyncHandler(async (req, res) => {
   // Get most recent active session
   const session = await Session.findOne({ isActive: true })
     .sort({ createdAt: -1 })
     .populate('admin', 'username')
     .populate('activeSong', 'title artist language');
-  
-  res.json({
-    success: true,
-    session
-  });
-});
-
-/**
- * @desc    Get session by ID
- * @route   GET /api/sessions/:id
- * @access  Private
- */
-const getSessionById = asyncHandler(async (req, res) => {
-  const session = await Session.findById(req.params.id)
-    .populate('admin', 'username')
-    .populate('activeSong', 'title artist language');
-  
-  if (!session) {
-    return res.status(404).json({
-      success: false,
-      message: 'Session not found'
-    });
-  }
   
   res.json({
     success: true,
@@ -116,46 +94,6 @@ const joinSession = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    End a session
- * @route   POST /api/sessions/:id/end
- * @access  Private/Admin
- */
-const endSession = asyncHandler(async (req, res) => {
-  const session = await Session.findById(req.params.id);
-  
-  if (!session) {
-    return res.status(404).json({
-      success: false,
-      message: 'Session not found'
-    });
-  }
-  
-  // Verify user is admin
-  if (!req.user.isAdmin) {
-    return res.status(403).json({
-      success: false,
-      message: 'Only admin users can end sessions'
-    });
-  }
-  
-  // End the session
-  session.isActive = false;
-  session.endedAt = new Date();
-  await session.save();
-  
-  // Get Socket.io instance to emit events
-  const io = req.app.get('io');
-  if (io) {
-    io.to(session._id.toString()).emit('session_ended');
-  }
-  
-  res.json({
-    success: true,
-    message: 'Session ended successfully'
-  });
-});
-
-/**
  * @desc    Set active song for a session
  * @route   POST /api/sessions/:id/set-song/:songId
  * @access  Private/Admin
@@ -219,7 +157,7 @@ const setActiveSong = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Clear active song for a session
+ * @desc    Clear active song for a session (quit song)
  * @route   POST /api/sessions/:id/clear-song
  * @access  Private/Admin
  */
@@ -259,11 +197,9 @@ const clearActiveSong = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  getActiveSessions,
-  getSessionById,
+  getActiveSession,
   createSession,
   joinSession,
-  endSession,
   setActiveSong,
   clearActiveSong
 };

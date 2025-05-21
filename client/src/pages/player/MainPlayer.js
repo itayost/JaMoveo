@@ -1,82 +1,43 @@
 // client/src/pages/player/MainPlayer.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
-import { sessionAPI } from '../../services/api.service';
 import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
+/**
+ * Main Player Page - Shows waiting screen for musicians
+ * Displays "Waiting for next song" until admin selects a song
+ */
 const MainPlayer = () => {
   const { user } = useAuth();
   const { socket, connected, joinSession } = useSocket();
   const { highContrast } = useTheme();
   const navigate = useNavigate();
 
-  // State
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [activeSession, setActiveSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Update connection status based on socket connection
-  useEffect(() => {
-    setConnectionStatus(connected ? 'connected' : 'connecting');
-  }, [connected]);
-
-  // Find and join active session
+  // Join session when socket connects
   useEffect(() => {
     const findAndJoinSession = async () => {
-      if (!user) return;
-      
-      try {
-        setLoading(true);
-        
-        // Find active session
-        const response = await sessionAPI.getActiveSessions(true);
-        
-        if (response.data.success && response.data.session) {
-          // Get active session
-          const session = response.data.session;
-          setActiveSession(session);
-          
-          // Join session via socket if connected
-          if (socket && connected) {
-            joinSession(session._id);
-            setConnectionStatus('connected');
-          } else {
-            setConnectionStatus('waiting');
-          }
-        } else {
-          // No active session found
-          setActiveSession(null);
-          setConnectionStatus('waiting');
-        }
-        
-        setErrorMessage('');
-      } catch (error) {
-        console.error('Error joining session:', error);
-        setConnectionStatus('error');
-        setErrorMessage('Could not join rehearsal session. Please try again.');
-      } finally {
-        setLoading(false);
+      if (socket && connected) {
+        // The joinSession function in useSocket context should handle finding
+        // the active session and joining it. We don't need to track the session
+        // ID here as that will be provided with the song_selected event.
+        joinSession();
       }
     };
 
     findAndJoinSession();
-  }, [user, socket, connected, joinSession]);
-  
+  }, [socket, connected, joinSession]);
+
   // Listen for song selection events
   useEffect(() => {
     if (!socket) return;
     
-    const handleSongSelected = ({ songId }) => {
-      if (activeSession) {
-        // Navigate to live page with song and session info
-        navigate(`/live?songId=${songId}&sessionId=${activeSession._id}`);
-      }
+    const handleSongSelected = (data) => {
+      // Navigate to live page when song is selected
+      // The data object should include songId and sessionId from the server
+      navigate(`/live?songId=${data.songId}&sessionId=${data.sessionId}`);
     };
     
     socket.on('song_selected', handleSongSelected);
@@ -84,51 +45,7 @@ const MainPlayer = () => {
     return () => {
       socket.off('song_selected', handleSongSelected);
     };
-  }, [socket, activeSession, navigate]);
-
-  // Handle retry connection
-  const handleRetry = async () => {
-    setConnectionStatus('connecting');
-    setLoading(true);
-    
-    try {
-      // Find active session
-      const response = await sessionAPI.getActiveSessions(true);
-      
-      if (response.data.success && response.data.session) {
-        setActiveSession(response.data.session);
-        
-        if (socket && connected) {
-          joinSession(response.data.session._id);
-          setConnectionStatus('connected');
-        } else {
-          setConnectionStatus('waiting');
-        }
-      } else {
-        setActiveSession(null);
-        setConnectionStatus('waiting');
-      }
-      
-      setErrorMessage('');
-    } catch (error) {
-      setConnectionStatus('error');
-      setErrorMessage('Connection failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center">
-          <LoadingIndicator size="lg" color="primary" />
-          <p className="mt-4 text-xl text-text-light">Connecting to rehearsal...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [socket, navigate]);
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 bg-background ${highContrast ? 'high-contrast' : ''}`}>
@@ -142,35 +59,13 @@ const MainPlayer = () => {
             The band leader will select a song soon
           </p>
           
-          {/* Connection status */}
+          {/* Simple connection status */}
           <div className={`inline-flex items-center px-4 py-2 rounded-full ${
-            connectionStatus === 'connected' ? 'bg-success text-white' : 
-            connectionStatus === 'error' ? 'bg-error text-white' : 
-            'bg-accent text-secondary-dark'
+            connected ? 'bg-success text-white' : 'bg-warning text-black'
           }`}>
-            <span className={`w-3 h-3 rounded-full mr-2 ${connectionStatus === 'connecting' ? 'animate-pulse' : ''}`}></span>
-            {connectionStatus === 'connected' ? 'Connected to rehearsal' : 
-             connectionStatus === 'error' ? 'Connection error' : 
-             'Waiting for admin to start'}
+            <span className={`w-3 h-3 rounded-full mr-2 ${!connected ? 'animate-pulse' : ''}`}></span>
+            {connected ? 'Connected to rehearsal' : 'Connecting...'}
           </div>
-          
-          {/* Error message */}
-          {errorMessage && (
-            <div className="mt-4 p-3 bg-error bg-opacity-20 text-error rounded">
-              {errorMessage}
-            </div>
-          )}
-          
-          {/* Retry button */}
-          {connectionStatus === 'error' && (
-            <Button
-              onClick={handleRetry}
-              variant="primary"
-              className="mt-4"
-            >
-              Retry Connection
-            </Button>
-          )}
         </Card>
         
         {/* User info */}
