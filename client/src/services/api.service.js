@@ -1,10 +1,8 @@
 // client/src/services/api.service.js
 import axios from 'axios';
 
-// API base URL - FIXED: Use explicit backend URL instead of relying on proxy
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
-
-console.log('API Service initialized with base URL:', API_URL);
+// API base URL - Use explicit backend URL or fall back to proxy
+const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 // Create axios instance with common configuration
 const api = axios.create({
@@ -12,7 +10,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true // Enables cookies if needed for CSRF tokens
+  withCredentials: true,
+  timeout: 10000 // 10 second timeout
 });
 
 /**
@@ -27,7 +26,7 @@ api.interceptors.request.use(
     
     // Log outgoing requests in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`, config);
+      console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
     }
     
     return config;
@@ -45,7 +44,7 @@ api.interceptors.response.use(
   (response) => {
     // Log successful responses in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`API Response from ${response.config.url}:`, response.status);
+      console.log(`API Response (${response.status}):`, response.config.url);
     }
     return response;
   },
@@ -70,8 +69,7 @@ api.interceptors.response.use(
         url: error.config?.url,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
+        data: error.response?.data
       });
     }
     
@@ -86,10 +84,6 @@ export const authAPI = {
   /**
    * Register a new user
    * @param {Object} userData - User registration data
-   * @param {string} userData.username - Username
-   * @param {string} userData.password - Password
-   * @param {string} userData.instrument - Instrument
-   * @param {string} [userData.otherInstrument] - Other instrument if "other" selected
    * @returns {Promise<Object>} Response with user data and success status
    */
   register: (userData) => api.post('/auth/register', userData),
@@ -97,9 +91,6 @@ export const authAPI = {
   /**
    * Register an admin user
    * @param {Object} userData - Admin registration data
-   * @param {string} userData.username - Username
-   * @param {string} userData.password - Password
-   * @param {string} userData.adminCode - Secret admin code
    * @returns {Promise<Object>} Response with user data and success status
    */
   registerAdmin: (userData) => api.post('/auth/admin-register', userData),
@@ -138,9 +129,6 @@ export const userAPI = {
   /**
    * Update user profile
    * @param {Object} userData - Updated user data
-   * @param {string} [userData.instrument] - Instrument
-   * @param {string} [userData.otherInstrument] - Other instrument if "other" selected
-   * @param {string} [userData.password] - New password (optional)
    * @returns {Promise<Object>} Response with updated user data
    */
   updateProfile: (userData) => api.put('/users/profile', userData)
@@ -152,7 +140,7 @@ export const userAPI = {
 export const songAPI = {
   /**
    * Search songs with optional filters
-   * @param {string} [query] - Search term
+   * @param {string} query - Search term
    * @param {string} [language] - Filter by language ("English" or "Hebrew")
    * @param {number} [page=1] - Page number
    * @param {number} [limit=10] - Results per page
@@ -178,15 +166,6 @@ export const songAPI = {
   /**
    * Create a new song (admin only)
    * @param {Object} songData - Song data
-   * @param {string} songData.title - Song title
-   * @param {string} songData.artist - Artist name
-   * @param {string} songData.language - Song language
-   * @param {string} songData.lyrics - Song lyrics
-   * @param {string} songData.chords - Song chords
-   * @param {string} [songData.imageUrl] - Image URL
-   * @param {number} [songData.year] - Release year
-   * @param {string} [songData.genre] - Song genre
-   * @param {string} [songData.key] - Song musical key
    * @returns {Promise<Object>} Response with created song data
    */
   createSong: (songData) => api.post('/songs', songData),
@@ -231,7 +210,6 @@ export const sessionAPI = {
   /**
    * Create a new session (admin only)
    * @param {Object} [sessionData={}] - Session data
-   * @param {string} [sessionData.name] - Session name (optional)
    * @returns {Promise<Object>} Response with created session data
    */
   createSession: (sessionData = {}) => api.post('/sessions', sessionData),

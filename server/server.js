@@ -3,9 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
-const mongoose = require('mongoose');
 const path = require('path');
-const socketIo = require('socket.io');
 const connectDB = require('./config/database');
 const setupSocket = require('./socket');
 
@@ -69,26 +67,6 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Rate limiting middleware for production
-if (process.env.NODE_ENV === 'production') {
-  const rateLimit = require('express-rate-limit');
-  
-  // Apply rate limiting to auth routes
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,                  // 100 requests per window
-    message: 'Too many requests from this IP, please try again later'
-  });
-  
-  app.use('/api/auth', authLimiter);
-}
-
-// Security middleware for production
-if (process.env.NODE_ENV === 'production') {
-  const helmet = require('helmet');
-  app.use(helmet());
-}
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -100,7 +78,9 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    nodeVersion: process.version,
+    memoryUsage: process.memoryUsage()
   });
 });
 
@@ -124,10 +104,14 @@ app.use(errorHandler);
 // Set up Socket.io
 const io = setupSocket(server);
 
+// Store io instance to app for potential use in routes
+app.set('io', io);
+
 // Start server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`Socket.io server initialized`);
 });
 
 // Handle unhandled promise rejections

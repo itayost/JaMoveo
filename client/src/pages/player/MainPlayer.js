@@ -12,40 +12,76 @@ import AccessibilitySettings from '../../components/shared/AccessibilitySettings
 
 const MainPlayer = () => {
   const { user } = useAuth();
-  const { socket, connected } = useSocket();
+  const { 
+    socket, 
+    connected,
+    currentSession,
+    joinSession,
+    connectedUsers 
+  } = useSocket();
   const { highContrast, fontSize } = useTheme();
   const navigate = useNavigate();
 
+  // State
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [activeSession, setActiveSession] = useState(null);
   const [userCount, setUserCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Update connection status based on socket connection
+  useEffect(() => {
+    if (connected) {
+      setConnectionStatus('connected');
+    } else {
+      setConnectionStatus(prev => prev === 'connected' ? 'reconnecting' : 'connecting');
+    }
+  }, [connected]);
+
+  // Update session state from socket context
+  useEffect(() => {
+    if (currentSession) {
+      setActiveSession(currentSession);
+      if (currentSession.connectedUsers !== undefined) {
+        setUserCount(currentSession.connectedUsers);
+      }
+      setLoading(false);
+    }
+  }, [currentSession]);
+
+  // Update user count from connected users array
+  useEffect(() => {
+    if (Array.isArray(connectedUsers)) {
+      setUserCount(connectedUsers.length);
+    }
+  }, [connectedUsers]);
 
   // Find and join active session
   const findAndJoinSession = useCallback(async () => {
     try {
       setConnectionStatus('connecting');
+      setLoading(true);
       
       // Find active session
-      const response = await sessionAPI.getActiveSessions();
+      const response = await sessionAPI.getActiveSessions(true);
       
-      if (response.data.sessions && response.data.sessions.length > 0) {
-        // Get most recent session
-        const latestSession = response.data.sessions[0];
-        setActiveSession(latestSession);
-        
-        // Join session in database
-        await sessionAPI.joinSession(latestSession._id);
+      if (response.data.success && response.data.session) {
+        // Get active session
+        const session = response.data.session;
+        setActiveSession(session);
         
         // Join session via socket if connected
         if (socket && connected) {
-          socket.emit('join_session', latestSession._id);
+          joinSession(session._id);
           setConnectionStatus('connected');
         } else {
+          // We found a session but socket isn't connected
           setConnectionStatus('waiting');
         }
       } else {
+        // No active session found
+        setActiveSession(null);
         setConnectionStatus('waiting');
       }
       
@@ -54,88 +90,54 @@ const MainPlayer = () => {
       console.error('Error joining session:', error);
       setConnectionStatus('error');
       setErrorMessage('Could not join rehearsal session. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }, [socket, connected]);
+  }, [socket, connected, joinSession]);
   
-  // Effect for initial session join
+  // Handle socket reconnection attempts
+  useEffect(() => {
+    const handleReconnectAttempt = () => {
+      setReconnectAttempts(prev => prev + 1);
+      setConnectionStatus('reconnecting');
+    };
+
+    if (socket) {
+      socket.on('reconnect_attempt', handleReconnectAttempt);
+      return () => {
+        socket.off('reconnect_attempt', handleReconnectAttempt);
+      };
+    }
+  }, [socket]);
+  
+  // Initial session join
   useEffect(() => {
     if (user) {
       findAndJoinSession();
     }
   }, [user, findAndJoinSession]);
   
-  // Handle socket connection changes
-  useEffect(() => {
-    if (connected) {
-      if (activeSession && socket) {
-        socket.emit('join_session', activeSession._id);
-        setConnectionStatus('connected');
-      }
-    } else {
-      setConnectionStatus(prev => prev === 'connected' ? 'reconnecting' : prev);
-    }
-  }, [connected, socket, activeSession]);
-  
-  // Handle socket events
+  // Listen for song selection events
   useEffect(() => {
     if (!socket) return;
     
-    // Handle song selection
     const handleSongSelected = ({ songId }) => {
       if (activeSession) {
+        // Navigate to live page with song and session info
         navigate(`/live?songId=${songId}&sessionId=${activeSession._id}`);
       }
     };
     
-    // Handle user joined/left events to update user count
-    const handleUserJoined = () => {
-      setUserCount(prev => prev + 1);
-    };
-    
-    const handleUserLeft = () => {
-      setUserCount(prev => Math.max(0, prev - 1));
-    };
-    
-    // Handle session state update
-    const handleSessionState = (data) => {
-      if (data.connectedUsers) {
-        setUserCount(data.connectedUsers);
-      }
-    };
-    
-    // Handle errors
-    const handleError = (error) => {
-      console.error('Socket error:', error);
-      setErrorMessage(error.message || 'Connection error occurred');
-    };
-    
-    // Socket reconnection
-    const handleReconnectAttempt = () => {
-      setReconnectAttempts(prev => prev + 1);
-      setConnectionStatus('reconnecting');
-    };
-    
-    // Register event handlers
     socket.on('song_selected', handleSongSelected);
-    socket.on('user_joined', handleUserJoined);
-    socket.on('user_left', handleUserLeft);
-    socket.on('session_state', handleSessionState);
-    socket.on('error', handleError);
-    socket.on('reconnect_attempt', handleReconnectAttempt);
     
     return () => {
-      // Clean up event handlers
       socket.off('song_selected', handleSongSelected);
-      socket.off('user_joined', handleUserJoined);
-      socket.off('user_left', handleUserLeft);
-      socket.off('session_state', handleSessionState);
-      socket.off('error', handleError);
-      socket.off('reconnect_attempt', handleReconnectAttempt);
     };
   }, [socket, activeSession, navigate]);
 
   // Handle manual reconnection
   const handleManualReconnect = () => {
+    setReconnectAttempts(0);
     findAndJoinSession();
   };
 
@@ -178,6 +180,18 @@ const MainPlayer = () => {
     'x-large': 'text-3xl'
   }[fontSize] || 'text-xl';
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center">
+          <LoadingIndicator size="lg" color="primary" />
+          <p className="mt-4 text-xl text-text-light">Connecting to rehearsal...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 bg-background ${highContrast ? 'high-contrast' : ''}`}>
       <div className="max-w-md w-full text-center">
@@ -207,13 +221,19 @@ const MainPlayer = () => {
             </p>
           )}
           
+          {activeSession && (
+            <div className="mt-4 text-text-muted">
+              <p>Session: {activeSession.name}</p>
+            </div>
+          )}
+          
           {errorMessage && (
             <div className="mt-4 p-3 bg-error bg-opacity-20 text-error rounded">
               {errorMessage}
             </div>
           )}
           
-          {(connectionStatus === 'error' || reconnectAttempts > 3) && (
+          {(connectionStatus === 'error' || reconnectAttempts > 2) && (
             <Button
               onClick={handleManualReconnect}
               variant="primary"
@@ -226,7 +246,14 @@ const MainPlayer = () => {
         
         {user && (
           <div className={`text-text-muted ${fontSizeClass}`}>
-            {user.username} • {user.instrument}
+            <p className="mb-2">
+              Signed in as <span className="font-semibold">{user.username}</span>
+            </p>
+            <p>
+              Instrument: <span className="font-semibold">
+                {user.instrument === 'other' ? user.otherInstrument : user.instrument}
+              </span>
+            </p>
           </div>
         )}
       </div>

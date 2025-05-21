@@ -10,6 +10,7 @@ import Input from '../../components/ui/Input';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
 const MainAdmin = () => {
+  // State
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionStats, setSessionStats] = useState({
     activeUsers: 0,
@@ -19,8 +20,9 @@ const MainAdmin = () => {
   const [recentSessions, setRecentSessions] = useState([]);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   
+  // Hooks
   const { user } = useAuth();
-  const { socket, connected } = useSocket();
+  const { socket, connected, currentSession, connectedUsers } = useSocket();
   const navigate = useNavigate();
 
   // Fetch active sessions info
@@ -29,7 +31,7 @@ const MainAdmin = () => {
       try {
         setSessionStats(prev => ({ ...prev, loading: true }));
         
-        const response = await sessionAPI.getActiveSessions();
+        const response = await sessionAPI.getActiveSessions(false); // Get all sessions
         
         if (response.data.success) {
           // Process sessions data
@@ -39,12 +41,9 @@ const MainAdmin = () => {
           if (sessions.length > 0) {
             const latestSession = sessions[0];
             
-            // Get user count from connected users if available
-            const connectedUserCount = latestSession.connectedUsers ? 
-              latestSession.connectedUsers.length : 0;
-              
+            // Update session stats
             setSessionStats({
-              activeUsers: connectedUserCount,
+              activeUsers: Array.isArray(connectedUsers) ? connectedUsers.length : 0,
               activeSession: latestSession,
               loading: false,
               error: null
@@ -78,47 +77,42 @@ const MainAdmin = () => {
     
     fetchSessionInfo();
     
-    // Refresh data every 10 seconds
-    const intervalId = setInterval(fetchSessionInfo, 10000);
+    // Refresh data every 30 seconds
+    const intervalId = setInterval(fetchSessionInfo, 30000);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [connectedUsers]);
 
-  // Socket connection for real-time updates
+  // Update session stats from socket context
   useEffect(() => {
-    if (!socket || !connected) return;
-    
-    // Listen for user join/leave events to update counts
-    const handleUserJoined = () => {
+    if (currentSession) {
       setSessionStats(prev => ({
         ...prev,
-        activeUsers: prev.activeUsers + 1
+        activeSession: currentSession,
+        activeUsers: currentSession.connectedUsers || 0
       }));
-    };
-    
-    const handleUserLeft = () => {
-      setSessionStats(prev => ({
-        ...prev,
-        activeUsers: Math.max(0, prev.activeUsers - 1)
-      }));
-    };
-    
-    socket.on('user_joined', handleUserJoined);
-    socket.on('user_left', handleUserLeft);
-    
-    return () => {
-      socket.off('user_joined', handleUserJoined);
-      socket.off('user_left', handleUserLeft);
-    };
-  }, [socket, connected]);
+    }
+  }, [currentSession]);
 
+  // Update active users count from socket connection
+  useEffect(() => {
+    if (Array.isArray(connectedUsers)) {
+      setSessionStats(prev => ({
+        ...prev,
+        activeUsers: connectedUsers.length
+      }));
+    }
+  }, [connectedUsers]);
+
+  // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/admin/results?query=${encodeURIComponent(searchQuery)}`);
+      navigate(`/admin/results?query=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
+  // Create a new session
   const handleCreateSession = async () => {
     try {
       setIsCreatingSession(true);
@@ -128,8 +122,14 @@ const MainAdmin = () => {
       });
       
       if (response.data.success) {
-        // Navigate to results page to select a song
-        const defaultQuery = 'imagine'; // Default search query
+        setSessionStats(prev => ({
+          ...prev,
+          activeSession: response.data.session,
+          error: null
+        }));
+        
+        // Navigate to results page with default search to select a song
+        const defaultQuery = 'imagine'; // Default search query for quick selection
         navigate(`/admin/results?query=${encodeURIComponent(defaultQuery)}`);
       } else {
         throw new Error(response.data.message || 'Failed to create session');
@@ -145,11 +145,17 @@ const MainAdmin = () => {
     }
   };
 
-  // Format timestamp for display
-  const formatTime = (timestamp) => {
+  // Format date/time for display
+  const formatDateTime = (timestamp) => {
     if (!timestamp) return '';
+    
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
   return (
@@ -217,12 +223,24 @@ const MainAdmin = () => {
                   <div>
                     <span className="font-semibold">{sessionStats.activeSession.name}</span>
                     <p className="text-sm text-text-muted">
-                      Started at {formatTime(sessionStats.activeSession.createdAt)}
+                      Started at {formatDateTime(sessionStats.activeSession.createdAt)}
                     </p>
                   </div>
                   <span className="px-2 py-1 text-xs rounded-full bg-success text-white">
                     Active
                   </span>
+                </div>
+                
+                <div className="mt-2 mb-4 text-text-muted">
+                  <p>
+                    {sessionStats.activeUsers} {sessionStats.activeUsers === 1 ? 'musician' : 'musicians'} connected
+                  </p>
+                  
+                  {sessionStats.activeSession.activeSong && (
+                    <p className="mt-1 text-primary">
+                      Now playing: {sessionStats.activeSession.activeSong.title}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex justify-between mt-4">
@@ -275,7 +293,7 @@ const MainAdmin = () => {
                     <div>
                       <div className="font-medium">{session.name}</div>
                       <div className="text-sm text-text-muted">
-                        {new Date(session.createdAt).toLocaleDateString()}
+                        {formatDateTime(session.createdAt)}
                       </div>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full ${

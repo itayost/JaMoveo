@@ -2,24 +2,20 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
-const { protect, admin } = require('../middleware/authmiddleware');
+const { protect, admin, rateLimit } = require('../middleware/authMiddleware');
 
-// Regular user registration
-router.post('/register', authController.registerUser);
+// Apply rate limiting to auth routes to prevent brute force attacks
+const authLimiter = rateLimit(100, 15 * 60 * 1000); // 100 requests per 15 minutes
 
-// Admin user registration (with admin code in .env)
-router.post('/admin-register', authController.registerAdmin);
+// Public routes
+router.post('/register', authLimiter, authController.registerUser);
+router.post('/admin-register', authLimiter, authController.registerAdmin);
+router.post('/login', authLimiter, authController.loginUser);
+router.get('/verify', authController.verifyToken);
 
-// Create additional admin (only existing admins can create other admins)
-router.post('/create-admin', protect, admin, authController.createAdmin);
-
-// User login
-router.post('/login', authController.loginUser);
-
-// Get current user (for testing auth)
+// Protected routes
 router.get('/me', protect, authController.getMe);
-
-// Logout user
 router.post('/logout', protect, authController.logout);
+router.post('/create-admin', protect, admin, authController.createAdmin);
 
 module.exports = router;

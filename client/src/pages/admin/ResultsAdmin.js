@@ -11,7 +11,7 @@ import LoadingIndicator from '../../components/ui/LoadingIndicator';
 const ResultsAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { socket, connected } = useSocket();
+  const { socket, connected, selectSong } = useSocket();
   const { highContrast } = useTheme();
   
   // State management
@@ -26,6 +26,7 @@ const ResultsAdmin = () => {
     isCreating: false,
     error: null
   });
+  const [selectedSongId, setSelectedSongId] = useState(null);
   
   // Get query from URL
   const query = new URLSearchParams(location.search).get('query') || '';
@@ -40,10 +41,12 @@ const ResultsAdmin = () => {
       
       try {
         setLoading(true);
-        const response = await songAPI.searchSongs(query);
+        const response = await songAPI.searchSongs(query, languageFilter !== 'all' ? languageFilter : null);
         
         if (response.data.success) {
-          setResults(response.data.songs || []);
+          const songs = response.data.songs || [];
+          setResults(songs);
+          setFilteredResults(songs);
           setError(null);
         } else {
           setError(response.data.message || 'Failed to load search results');
@@ -57,7 +60,7 @@ const ResultsAdmin = () => {
     };
     
     fetchSongs();
-  }, [query]);
+  }, [query, languageFilter]);
   
   // Apply filtering and sorting
   useEffect(() => {
@@ -75,7 +78,6 @@ const ResultsAdmin = () => {
     } else if (sortOrder === 'artist') {
       filtered.sort((a, b) => a.artist.localeCompare(b.artist));
     }
-    // 'relevance' sorting is handled by the backend
     
     setFilteredResults(filtered);
   }, [results, languageFilter, sortOrder]);
@@ -86,11 +88,11 @@ const ResultsAdmin = () => {
       setActiveSessionState({ isCreating: true, error: null });
       
       // Check for active sessions
-      const response = await sessionAPI.getActiveSessions();
+      const response = await sessionAPI.getActiveSessions(true);
       
-      if (response.data.sessions && response.data.sessions.length > 0) {
-        // Use the most recent active session
-        setCurrentSession(response.data.sessions[0]);
+      if (response.data.success && response.data.session) {
+        // Use the existing active session
+        setCurrentSession(response.data.session);
       } else {
         // Create a new session
         const createResponse = await sessionAPI.createSession({
@@ -119,52 +121,68 @@ const ResultsAdmin = () => {
     getOrCreateSession();
   }, [getOrCreateSession]);
 
+  // Handle back button
   const handleBack = () => {
     navigate('/admin');
   };
 
+  // Handle song selection
   const handleSelectSong = async (songId) => {
-    if (activeSessionState.isCreating) {
-      return; // Do nothing if we're still creating a session
+    if (activeSessionState.isCreating || selectedSongId) {
+      return; // Prevent double selection
     }
     
     try {
+      // Set selected state immediately for visual feedback
+      setSelectedSongId(songId);
+      
       if (!currentSession) {
         // Try to get/create a session if we don't have one
         await getOrCreateSession();
         
         if (!currentSession) {
           setError('No active session found. Please refresh and try again.');
+          setSelectedSongId(null);
           return;
         }
       }
       
       // Emit select_song event via socket
       if (socket && connected) {
-        socket.emit('select_song', {
-          sessionId: currentSession._id,
-          songId
-        });
+        selectSong(currentSession._id, songId);
         
-        // Navigate to live page
-        navigate(`/live?songId=${songId}&sessionId=${currentSession._id}`);
+        // Short delay to allow server to process the selection
+        setTimeout(() => {
+          // Navigate to live page
+          navigate(`/live?songId=${songId}&sessionId=${currentSession._id}`);
+        }, 300);
       } else {
-        throw new Error('Socket connection not available');
+        // Fallback to API if socket not connected
+        const session = await sessionAPI.getSession(currentSession._id);
+        if (session.data.success) {
+          navigate(`/live?songId=${songId}&sessionId=${currentSession._id}`);
+        } else {
+          throw new Error('Failed to access session');
+        }
       }
     } catch (error) {
       console.error('Error selecting song:', error);
       setError('Failed to select song. Please check your connection and try again.');
+      setSelectedSongId(null);
     }
   };
 
+  // Handle language filter change
   const handleLanguageFilterChange = (e) => {
     setLanguageFilter(e.target.value);
   };
 
+  // Handle sort order change
   const handleSortOrderChange = (e) => {
     setSortOrder(e.target.value);
   };
 
+  // Handle session retry
   const handleRetrySession = () => {
     getOrCreateSession();
   };
@@ -311,7 +329,9 @@ const ResultsAdmin = () => {
                 role="button"
                 tabIndex={0}
                 aria-label={`Select song: ${song.title} by ${song.artist}`}
-                className="bg-surface rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`bg-surface rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary ${
+                  selectedSongId === song._id ? 'ring-2 ring-primary transform scale-[0.98]' : ''
+                }`}
               >
                 <div className="relative">
                   {song.imageUrl ? (
@@ -356,6 +376,13 @@ const ResultsAdmin = () => {
                     <p className="text-text-muted text-sm">
                       Genre: {song.genre}
                     </p>
+                  )}
+                  
+                  {selectedSongId === song._id && (
+                    <div className="mt-2 flex items-center text-primary">
+                      <LoadingIndicator size="sm" color="primary" className="mr-2" />
+                      Selecting...
+                    </div>
                   )}
                 </div>
               </div>

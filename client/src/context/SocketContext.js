@@ -30,23 +30,29 @@ export const SocketProvider = ({ children }) => {
   
   // Current session state
   const [currentSession, setCurrentSession] = useState(null);
+  const [connectedUsers, setConnectedUsers] = useState([]);
   
   // Initialize socket connection when user authenticates
   useEffect(() => {
     // Only connect if user is authenticated
     if (!user || !token) {
       if (socket) {
+        console.log('Disconnecting socket due to missing auth');
         socket.disconnect();
         setSocket(null);
         setConnected(false);
         setCurrentSession(null);
+        setConnectedUsers([]);
       }
       return;
     }
 
-    // Get socket URL from environment or use explicit backend URL
-    // IMPORTANT FIX: Use explicit backend URL instead of window.location.origin
-    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
+    // Get socket URL from environment or use default
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || (
+      window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001' 
+        : window.location.origin
+    );
     
     console.log('Connecting to Socket.IO server at:', SOCKET_URL);
 
@@ -57,7 +63,7 @@ export const SocketProvider = ({ children }) => {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      // ADDED: Additional options to help with CORS/connection issues
+      timeout: 10000,
       withCredentials: true,
       transports: ['websocket', 'polling']
     });
@@ -72,13 +78,12 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on('connect_error', (err) => {
-      // IMPROVED: More detailed error logging
       console.error('Socket connection error:', err.message);
       console.error('Error details:', err);
       setConnected(false);
       setError(err.message);
       
-      // ADDED: Check for common error cases
+      // Check for common error cases
       if (err.message.includes('xhr poll error')) {
         console.warn('This may be a CORS issue or the server is not running.');
       } else if (err.message.includes('Invalid token')) {
@@ -114,6 +119,21 @@ export const SocketProvider = ({ children }) => {
       setCurrentSession(sessionData);
     });
     
+    // Handle user joined/left events
+    newSocket.on(socketEvents.USER_JOINED, (userData) => {
+      console.log('User joined:', userData);
+      setConnectedUsers(prev => [...prev, {
+        username: userData.username,
+        instrument: userData.instrument,
+        otherInstrument: userData.otherInstrument
+      }]);
+    });
+    
+    newSocket.on(socketEvents.USER_LEFT, (userData) => {
+      console.log('User left:', userData);
+      setConnectedUsers(prev => prev.filter(user => user.username !== userData.username));
+    });
+    
     newSocket.on(socketEvents.ERROR, (errorData) => {
       console.error('Socket error:', errorData);
       setError(errorData.message || 'An error occurred');
@@ -136,20 +156,25 @@ export const SocketProvider = ({ children }) => {
   const joinSession = useCallback((sessionId) => {
     if (!socket || !connected) {
       setError('Cannot join session: Socket not connected');
-      return;
+      return false;
     }
     
+    console.log('Emitting join_session event for session:', sessionId);
     socket.emit(socketEvents.JOIN_SESSION, sessionId);
+    return true;
   }, [socket, connected]);
 
   /**
    * Leave the current session
    */
   const leaveSession = useCallback(() => {
-    if (!socket || !connected || !currentSession) return;
+    if (!socket || !connected || !currentSession) return false;
     
+    console.log('Emitting leave_session event');
     socket.emit(socketEvents.LEAVE_SESSION, currentSession.id);
     setCurrentSession(null);
+    setConnectedUsers([]);
+    return true;
   }, [socket, connected, currentSession]);
 
   /**
@@ -160,10 +185,12 @@ export const SocketProvider = ({ children }) => {
   const selectSong = useCallback((sessionId, songId) => {
     if (!socket || !connected) {
       setError('Cannot select song: Socket not connected');
-      return;
+      return false;
     }
     
+    console.log(`Emitting select_song event for session ${sessionId}, song ${songId}`);
     socket.emit(socketEvents.SELECT_SONG, { sessionId, songId });
+    return true;
   }, [socket, connected]);
 
   /**
@@ -173,10 +200,12 @@ export const SocketProvider = ({ children }) => {
   const quitSong = useCallback((sessionId) => {
     if (!socket || !connected) {
       setError('Cannot quit song: Socket not connected');
-      return;
+      return false;
     }
     
+    console.log('Emitting quit_song event for session:', sessionId);
     socket.emit(socketEvents.QUIT_SONG, sessionId);
+    return true;
   }, [socket, connected]);
 
   /**
@@ -188,14 +217,16 @@ export const SocketProvider = ({ children }) => {
   const toggleAutoScroll = useCallback((sessionId, enabled, speed = 1) => {
     if (!socket || !connected) {
       setError('Cannot toggle auto-scroll: Socket not connected');
-      return;
+      return false;
     }
     
+    console.log(`Emitting toggle_autoscroll event (${enabled ? 'on' : 'off'}, speed: ${speed})`);
     socket.emit(socketEvents.TOGGLE_AUTOSCROLL, {
       sessionId,
       enabled,
       speed
     });
+    return true;
   }, [socket, connected]);
 
   /**
@@ -204,48 +235,40 @@ export const SocketProvider = ({ children }) => {
    * @param {number} position - Scroll position
    */
   const updateScrollPosition = useCallback((sessionId, position) => {
-    if (!socket || !connected) return;
+    if (!socket || !connected) return false;
     
     socket.emit(socketEvents.SCROLL_POSITION, {
       sessionId,
       position
     });
+    return true;
   }, [socket, connected]);
 
   /**
    * Manually attempt reconnection
    */
   const reconnect = useCallback(() => {
-    if (!socket) return;
+    if (!socket) return false;
     
+    console.log('Manually reconnecting socket');
     socket.connect();
+    return true;
   }, [socket]);
 
-  // ADDED: Method to help debug connection issues
-  const checkConnectionStatus = useCallback(() => {
-    console.log('Current socket:', socket);
-    console.log('Connected:', connected);
-    console.log('Current user:', user);
-    console.log('Auth token exists:', !!token);
-    
-    if (socket) {
-      console.log('Socket ID:', socket.id);
-      console.log('Socket connected:', socket.connected);
-      console.log('Socket disconnected:', socket.disconnected);
-    }
-    
+  /**
+   * Get connection status details for debugging
+   */
+  const getConnectionStatus = useCallback(() => {
     return {
-      socket: !!socket,
       connected,
-      user: !!user,
-      token: !!token,
-      socketDetails: socket ? {
-        id: socket.id,
-        connected: socket.connected,
-        disconnected: socket.disconnected
-      } : null
+      reconnecting,
+      reconnectAttempts,
+      error,
+      socketId: socket?.id,
+      session: currentSession,
+      connectedUsers
     };
-  }, [socket, connected, user, token]);
+  }, [connected, reconnecting, reconnectAttempts, error, socket, currentSession, connectedUsers]);
 
   // Values to provide in context
   const contextValue = {
@@ -255,6 +278,7 @@ export const SocketProvider = ({ children }) => {
     reconnectAttempts,
     error,
     currentSession,
+    connectedUsers,
     // Socket actions
     joinSession,
     leaveSession,
@@ -263,21 +287,8 @@ export const SocketProvider = ({ children }) => {
     toggleAutoScroll,
     updateScrollPosition,
     reconnect,
-    // Debug helpers
-    checkConnectionStatus
+    getConnectionStatus
   };
-
-  // Provide a fallback UI when the socket fails to connect in development
-  // This helps with development when the backend is not running
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  if (isDevelopment && error && !connected && !socket && user) {
-    console.log('Rendering socket connection error UI');
-    return (
-      <SocketContext.Provider value={contextValue}>
-        {children}
-      </SocketContext.Provider>
-    );
-  }
 
   return (
     <SocketContext.Provider value={contextValue}>

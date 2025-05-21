@@ -1,5 +1,5 @@
 // client/src/pages/LivePage.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -25,7 +25,12 @@ const LivePage = () => {
   
   // Custom hooks
   const { user } = useAuth();
-  const { socket, connected } = useSocket();
+  const { 
+    socket, 
+    connected, 
+    toggleAutoScroll: socketToggleAutoScroll,
+    quitSong: socketQuitSong
+  } = useSocket();
   const { 
     highContrast, 
     fontSize, 
@@ -40,7 +45,8 @@ const LivePage = () => {
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [connectionStatus, setConnectionStatus] = useState(connected ? 'connected' : 'connecting');
   const [showControls, setShowControls] = useState(true);
-  const [lastInteraction, setLastInteraction] = useState(Date.now());
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [connectedUserCount, setConnectedUserCount] = useState(0);
   
   // Refs
   const contentRef = useRef(null);
@@ -54,66 +60,118 @@ const LivePage = () => {
 
   // Socket connection and events
   useEffect(() => {
-    if (!socket || !sessionId) return;
+    if (!socket || !connected || !sessionId) return;
     
     // Join session room
     socket.emit('join_session', sessionId);
     
     // Listen for song_quit event
     const handleSongQuit = () => {
+      // Clear any active scrolling
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+        setAutoScroll(false);
+      }
+      
+      // Navigate back to appropriate page
       navigate(user?.isAdmin ? '/admin' : '/player');
     };
     
     // Listen for auto-scroll commands from admin
     const handleAutoScrollState = (data) => {
+      console.log('Received autoscroll_state event:', data);
       setAutoScroll(data.enabled);
-      setScrollSpeed(data.speed);
+      if (data.speed) setScrollSpeed(parseFloat(data.speed));
     };
     
+    // Listen for session state updates
+    const handleSessionState = (data) => {
+      if (data.connectedUsers !== undefined) {
+        setConnectedUserCount(data.connectedUsers);
+      }
+    };
+    
+    // Listen for user joined/left events to update count
+    const handleUserJoined = () => {
+      setConnectedUserCount(prev => prev + 1);
+    };
+    
+    const handleUserLeft = () => {
+      setConnectedUserCount(prev => Math.max(0, prev - 1));
+    };
+    
+    // Register event listeners
     socket.on('song_quit', handleSongQuit);
     socket.on('autoscroll_state', handleAutoScrollState);
+    socket.on('session_state', handleSessionState);
+    socket.on('user_joined', handleUserJoined);
+    socket.on('user_left', handleUserLeft);
     
     // Cleanup listeners when component unmounts
     return () => {
-      socket.off('song_quit', handleSongQuit);
-      socket.off('autoscroll_state', handleAutoScrollState);
-      socket.emit('leave_session');
-    };
-  }, [socket, sessionId, user, navigate]);
-
-  // Auto-scroll effect
-  useEffect(() => {
-    if (autoScroll && contentRef.current) {
-      // Clear any existing interval
+      // Clear any active scrolling
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
       }
       
-      // Set up new scroll interval with dynamic speed
-      scrollIntervalRef.current = setInterval(() => {
-        if (contentRef.current) {
-          window.scrollBy({
-            top: scrollSpeed,
-            behavior: 'smooth'
-          });
-          
-          // Check if we've reached the bottom and should stop scrolling
-          const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-          if (scrollTop + clientHeight >= scrollHeight - 20) {
-            clearInterval(scrollIntervalRef.current);
-            setAutoScroll(false);
-            
-            // Emit auto-scroll state to server
-            if (socket && sessionId) {
-              socket.emit('toggle_autoscroll', {
-                sessionId,
-                enabled: false,
-                speed: scrollSpeed
-              });
-            }
-          }
+      // Remove event listeners
+      socket.off('song_quit', handleSongQuit);
+      socket.off('autoscroll_state', handleAutoScrollState);
+      socket.off('session_state', handleSessionState);
+      socket.off('user_joined', handleUserJoined);
+      socket.off('user_left', handleUserLeft);
+      
+      // Leave session
+      socket.emit('leave_session');
+    };
+  }, [socket, connected, sessionId, user, navigate]);
+
+  // Auto-scroll implementation
+  const startAutoScroll = useCallback(() => {
+    // Clear any existing interval
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+    }
+    
+    setIsScrolling(true);
+    
+    // Set up new scroll interval with dynamic speed
+    scrollIntervalRef.current = setInterval(() => {
+      // Calculate scroll speed based on document length and content
+      const baseSpeed = scrollSpeed; // pixels per interval
+      const pixelsPerInterval = Math.max(0.5, Math.min(5, baseSpeed));
+      
+      window.scrollBy({
+        top: pixelsPerInterval,
+        behavior: 'auto' // Using 'auto' instead of 'smooth' for consistent scrolling
+      });
+      
+      // Check if we've reached the bottom and should stop scrolling
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 20) {
+        clearInterval(scrollIntervalRef.current);
+        setAutoScroll(false);
+        setIsScrolling(false);
+        
+        // Emit auto-scroll state to server
+        if (socket && connected && sessionId) {
+          socketToggleAutoScroll(sessionId, false, scrollSpeed);
         }
-      }, 50);
+      }
+    }, 20); // Smaller interval for smoother scrolling
+  }, [scrollSpeed, socket, connected, sessionId, socketToggleAutoScroll]);
+
+  // Toggle auto-scroll effect
+  useEffect(() => {
+    if (autoScroll && !isScrolling) {
+      startAutoScroll();
+    } else if (!autoScroll && isScrolling) {
+      // Stop auto-scrolling
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+      }
+      setIsScrolling(false);
     }
     
     return () => {
@@ -121,7 +179,7 @@ const LivePage = () => {
         clearInterval(scrollIntervalRef.current);
       }
     };
-  }, [autoScroll, scrollSpeed, socket, sessionId]);
+  }, [autoScroll, isScrolling, startAutoScroll]);
 
   // Auto-hide controls after period of inactivity
   useEffect(() => {
@@ -131,7 +189,6 @@ const LivePage = () => {
     if (shouldAutoHide) {
       const handleUserInteraction = () => {
         setShowControls(true);
-        setLastInteraction(Date.now());
         
         // Clear any existing timer
         if (hideControlsTimerRef.current) {
@@ -165,12 +222,8 @@ const LivePage = () => {
       };
     }
     
-    return () => {
-      if (hideControlsTimerRef.current) {
-        clearTimeout(hideControlsTimerRef.current);
-      }
-    };
-  }, [lastInteraction, user]);
+    return undefined;
+  }, [user?.isAdmin]);
 
   // Set text direction based on song language
   useEffect(() => {
@@ -182,54 +235,53 @@ const LivePage = () => {
   // Handle quit song (admin only)
   const handleQuitSong = async () => {
     try {
-      if (sessionId) {
-        // End session via API
+      if (!sessionId) return;
+      
+      // Stop any auto-scrolling
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+        setAutoScroll(false);
+        setIsScrolling(false);
+      }
+      
+      // Emit socket event
+      if (socket && connected) {
+        socketQuitSong(sessionId);
+      } else {
+        // Fallback to HTTP if socket is not connected
         await endSession(sessionId);
-        
-        // Emit socket event
-        if (socket) {
-          socket.emit('quit_song', sessionId);
-        }
-        
         navigate('/admin');
       }
+      
     } catch (error) {
       console.error("Error ending session:", error);
     }
   };
 
-  // Toggle auto-scroll
-  const toggleAutoScroll = () => {
+  // Handle auto-scroll toggle
+  const handleToggleAutoScroll = () => {
     const newState = !autoScroll;
     setAutoScroll(newState);
     
-    // Emit auto-scroll state to server if in session
-    if (socket && sessionId) {
-      socket.emit('toggle_autoscroll', {
-        sessionId,
-        enabled: newState,
-        speed: scrollSpeed
-      });
+    // Emit auto-scroll state to server
+    if (socket && connected && sessionId) {
+      socketToggleAutoScroll(sessionId, newState, scrollSpeed);
     }
   };
 
   // Handle scroll speed change
-  const changeScrollSpeed = (amount) => {
+  const handleChangeScrollSpeed = (amount) => {
     const newSpeed = Math.max(0.5, Math.min(5, scrollSpeed + amount));
     setScrollSpeed(newSpeed);
     
     // Emit updated speed if auto-scroll is enabled
-    if (autoScroll && socket && sessionId) {
-      socket.emit('toggle_autoscroll', {
-        sessionId,
-        enabled: autoScroll,
-        speed: newSpeed
-      });
+    if (autoScroll && socket && connected && sessionId) {
+      socketToggleAutoScroll(sessionId, autoScroll, newSpeed);
     }
   };
 
-  // Scroll to top button handler
-  const scrollToTop = () => {
+  // Handle scroll to top
+  const handleScrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
@@ -331,12 +383,28 @@ const LivePage = () => {
           >
             {song.artist}
           </p>
-          {song.key && (
-            <div className="mt-1 inline-flex items-center">
-              <span className="text-sm text-accent mr-2">Key:</span>
-              <span className="text-sm font-mono bg-surface-elevated px-2 py-1 rounded">{song.key}</span>
-            </div>
-          )}
+          
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+            {song.key && (
+              <div className="inline-flex items-center">
+                <span className="text-sm text-accent mr-2">Key:</span>
+                <span className="text-sm font-mono bg-surface-elevated px-2 py-1 rounded">{song.key}</span>
+              </div>
+            )}
+            
+            {connectedUserCount > 0 && (
+              <div className="inline-flex items-center text-text-muted text-sm">
+                <span className="w-2 h-2 rounded-full bg-success mr-2"></span>
+                {connectedUserCount} {connectedUserCount === 1 ? 'musician' : 'musicians'} connected
+              </div>
+            )}
+            
+            {isHebrewSong && (
+              <div className="inline-flex items-center">
+                <span className="text-xs text-white bg-accent px-2 py-1 rounded-full">עברית</span>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -354,7 +422,7 @@ const LivePage = () => {
             <div className="mb-8">
               <h2 className={`text-xl mb-4 text-primary font-semibold`}>Chords</h2>
               <div className="bg-surface-elevated p-4 rounded-lg overflow-x-auto scrollbar-visible">
-                <pre className={`font-mono whitespace-pre-line text-accent ${fontSizeClass} ${contrastClasses}`}>{song.chords}</pre>
+                <pre className={`font-mono whitespace-pre ${fontSizeClass} ${contrastClasses} text-accent`}>{song.chords}</pre>
               </div>
             </div>
             
@@ -378,7 +446,7 @@ const LivePage = () => {
           <div className="flex items-center space-x-3">
             {/* Auto-scroll controls */}
             <Button
-              onClick={toggleAutoScroll}
+              onClick={handleToggleAutoScroll}
               variant={autoScroll ? 'primary' : 'secondary'}
               size="md"
               rounded="full"
@@ -396,7 +464,7 @@ const LivePage = () => {
             {autoScroll && (
               <div className="flex items-center space-x-2 bg-surface-elevated p-2 rounded-lg">
                 <Button 
-                  onClick={() => changeScrollSpeed(-0.5)}
+                  onClick={() => handleChangeScrollSpeed(-0.5)}
                   variant="ghost"
                   size="sm"
                   iconLeft={
@@ -413,7 +481,7 @@ const LivePage = () => {
                 <span className="text-text-light px-2 font-mono">{scrollSpeed.toFixed(1)}</span>
                 
                 <Button 
-                  onClick={() => changeScrollSpeed(0.5)}
+                  onClick={() => handleChangeScrollSpeed(0.5)}
                   variant="ghost"
                   size="sm"
                   iconLeft={
@@ -431,7 +499,7 @@ const LivePage = () => {
             
             {/* Scroll to top button */}
             <Button
-              onClick={scrollToTop}
+              onClick={handleScrollToTop}
               variant="secondary"
               size="md"
               rounded="full"

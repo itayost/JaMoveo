@@ -1,7 +1,5 @@
 # JaMoveo
 
-![JaMoveo Logo](https://via.placeholder.com/150x50?text=JaMoveo)
-
 A real-time collaborative music rehearsal application for Moveo's jam sessions.
 
 ## 🎵 Project Overview
@@ -30,18 +28,24 @@ JaMoveo is a web application designed to enhance music rehearsals by allowing mu
 Before you begin, ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (v16+)
 - [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
-- [MongoDB](https://www.mongodb.com/) (local or Atlas)
+- [MongoDB](https://www.mongodb.com/) (local installation or MongoDB Atlas)
 
 ## 🔧 Installation & Setup
 
-### Clone the repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/your-username/jamoveo.git
 cd jamoveo
 ```
 
-### Backend Setup
+### 2. Install root dependencies
+
+```bash
+npm install
+```
+
+### 3. Backend Setup
 
 ```bash
 # Navigate to server directory
@@ -50,25 +54,44 @@ cd server
 # Install dependencies
 npm install
 
-# Create .env file (edit with your configuration)
+# Create .env file from example
 cp .env.example .env
 
-# Start server in development mode
+# Edit the .env file with your configuration
+# - Set a secure JWT_SECRET
+# - Configure MongoDB connection
+# - Set ADMIN_SIGNUP_CODE for admin registration
+
+# Start the server in development mode
 npm run dev
 ```
 
-### Frontend Setup
+### 4. Frontend Setup
 
 ```bash
-# Navigate to client directory
+# Navigate to client directory (from project root)
 cd client
 
 # Install dependencies
 npm install
 
-# Start client in development mode
+# Start the client in development mode
 npm start
 ```
+
+### 5. Seed Initial Data
+
+To populate the database with sample song data and create default users:
+
+```bash
+# From the server directory
+npm run seed
+```
+
+This will create:
+- A default admin user (username: admin, password: adminpassword)
+- A default regular user (username: user, password: password)
+- Sample songs in both English and Hebrew
 
 ## 💻 Usage
 
@@ -81,7 +104,8 @@ npm start
 - Use auto-scroll for hands-free playing
 
 #### Admin User
-- Register using the special admin URL
+- Register using the special admin URL (http://localhost:3000/admin-signup)
+- Enter the admin code from your .env file (ADMIN_SIGNUP_CODE)
 - Log in to access the admin dashboard
 - Search for songs in English or Hebrew
 - Select songs to display to all connected musicians
@@ -97,10 +121,34 @@ npm start
 
 #### Admin Registration
 1. Visit `http://localhost:3000/admin-signup` 
-2. Enter a username and password
+2. Enter a username, password and the admin code (from .env file)
 3. Click "Create Admin Account"
 
-## 📁 Project Structure
+## 🎵 Features In Depth
+
+### Auto-Scroll Functionality
+- Tap the "Auto-Scroll" button to enable hands-free scrolling
+- Adjust speed with the + and - buttons
+- Admin can control scrolling for all connected users simultaneously
+
+### High-Contrast Mode
+- Toggle high-contrast mode for better visibility in smoky environments
+- Increases font size and enhances color contrast
+- Available through the accessibility settings button in the bottom-left corner
+
+### Role-Based Content Display
+- Vocalists see only lyrics
+- Instrumentalists see both chords and lyrics
+- Admin sees the full interface with control buttons
+
+### Multi-language Support
+- Support for both English and Hebrew content
+- Proper right-to-left (RTL) display for Hebrew songs
+- Filter songs by language
+
+## 🛠 Development
+
+### Project Structure
 
 ```
 jamoveo/
@@ -108,84 +156,92 @@ jamoveo/
 │   ├── public/              # Static files
 │   └── src/                 # React source code
 │       ├── components/      # Reusable components
-│       ├── pages/           # Page components
 │       ├── context/         # React context providers
 │       ├── hooks/           # Custom React hooks
+│       ├── pages/           # Page components
 │       ├── services/        # API services
-│       ├── utils/           # Utility functions
-│       └── App.js           # Main application component
+│       └── utils/           # Utility functions
 │
 ├── server/                  # Backend Node.js application
 │   ├── config/              # Configuration files
 │   ├── controllers/         # Route controllers
+│   ├── data/                # Sample data
 │   ├── middleware/          # Express middleware
 │   ├── models/              # Mongoose models
 │   ├── routes/              # API routes
-│   ├── services/            # Business logic
-│   ├── utils/               # Utility functions
-│   └── server.js            # Entry point
-│
-└── README.md                # This file
+│   ├── socket/              # Socket.io implementation
+│   └── utils/               # Utility functions
+└── package.json             # Root package.json for development tools
 ```
 
-## 📝 API Documentation
+### Backend API Overview
 
-The backend provides the following API endpoints:
-
-### Authentication
+#### Authentication
 - `POST /api/auth/register` - Register a new user
+- `POST /api/auth/admin-register` - Register an admin user
 - `POST /api/auth/login` - Log in a user
+- `POST /api/auth/logout` - Log out current user
 
-### Users
+#### Users
 - `GET /api/users/profile` - Get user profile
 - `PUT /api/users/profile` - Update user profile
 
-### Songs
+#### Songs
 - `GET /api/songs` - Search songs with query parameters
 - `GET /api/songs/:id` - Get a specific song
 
-### Sessions
+#### Sessions
 - `POST /api/sessions` - Create a new session (admin only)
+- `GET /api/sessions/active` - Get active sessions
 - `GET /api/sessions/:id` - Get session details
 - `POST /api/sessions/:id/join` - Join a session
+- `POST /api/sessions/:id/end` - End a session (admin only)
 
-## 🧪 Testing
+### Socket.io Events
 
-```bash
-# Run backend tests
-cd server
-npm test
+#### Client-to-Server Events
+- `join_session` - Join a rehearsal session
+- `leave_session` - Leave the current session
+- `select_song` - Select a song to display (admin only)
+- `quit_song` - End the current song display (admin only)
+- `toggle_autoscroll` - Toggle auto-scroll feature
+- `scroll_position` - Update scroll position
 
-# Run frontend tests
-cd client
-npm test
-```
+#### Server-to-Client Events
+- `session_state` - Session state update
+- `user_joined` - User joined notification
+- `user_left` - User left notification
+- `song_selected` - Song selected notification
+- `song_quit` - Song ended notification
+- `autoscroll_state` - Auto-scroll state update
 
 ## 🚀 Deployment
 
-The application can be deployed using various platforms. For example:
+The application can be deployed as follows:
 
-- Frontend: Vercel, Netlify, or AWS Amplify
-- Backend: Heroku, Railway, or AWS EC2
-- Database: MongoDB Atlas
+### Backend Deployment
+1. Set environment variables in production
+2. Build and deploy the Node.js server
+3. Ensure MongoDB is accessible
 
-Detailed deployment instructions will be provided in a separate document.
+### Frontend Deployment
+1. Build the React application
+2. Deploy the built files to a static hosting service
+
+## 🔍 Troubleshooting
+
+### Common Issues
+- **Socket Connection Problems**: Ensure the server is running and accessible from the client
+- **Database Connection Errors**: Check MongoDB connection string
+- **Authentication Issues**: Verify JWT secret and token expiration settings
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📜 License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Contact
-
-Project Link: [https://github.com/your-username/jamoveo](https://github.com/your-username/jamoveo)
+This project is licensed under the MIT License.
 
 ---
 
