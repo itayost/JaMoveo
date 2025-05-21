@@ -1,23 +1,31 @@
 // client/src/pages/admin/ResultsAdmin.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { songAPI } from '../../services/api.service';
-import { sessionAPI } from '../../services/api.service';
+import { songAPI, sessionAPI } from '../../services/api.service';
 import { useSocket } from '../../context/SocketContext';
+import { useTheme } from '../../context/ThemeContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
 const ResultsAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { socket } = useSocket();
+  const { socket, connected } = useSocket();
+  const { highContrast } = useTheme();
   
   // State management
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [results, setResults] = useState([]);
+  const [filteredResults, setFilteredResults] = useState([]);
   const [languageFilter, setLanguageFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('relevance');
   const [currentSession, setCurrentSession] = useState(null);
+  const [activeSessionState, setActiveSessionState] = useState({
+    isCreating: false,
+    error: null
+  });
   
   // Get query from URL
   const query = new URLSearchParams(location.search).get('query') || '';
@@ -25,11 +33,21 @@ const ResultsAdmin = () => {
   // Fetch results
   useEffect(() => {
     const fetchSongs = async () => {
+      if (!query) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
         const response = await songAPI.searchSongs(query);
-        setResults(response.data.songs || []);
-        setError(null);
+        
+        if (response.data.success) {
+          setResults(response.data.songs || []);
+          setError(null);
+        } else {
+          setError(response.data.message || 'Failed to load search results');
+        }
       } catch (err) {
         console.error('Error fetching songs:', err);
         setError('Failed to load search results. Please try again.');
@@ -38,68 +56,104 @@ const ResultsAdmin = () => {
       }
     };
     
-    if (query) {
-      fetchSongs();
-    } else {
-      setLoading(false);
-    }
+    fetchSongs();
   }, [query]);
   
-  // Get or create active session
+  // Apply filtering and sorting
   useEffect(() => {
-    const getOrCreateSession = async () => {
-      try {
-        // Check for active sessions
-        const response = await sessionAPI.getActiveSessions();
-        
-        if (response.data.sessions && response.data.sessions.length > 0) {
-          // Use the most recent active session
-          setCurrentSession(response.data.sessions[0]);
-        } else {
-          // Create a new session
-          const createResponse = await sessionAPI.createSession({
-            name: `Rehearsal ${new Date().toLocaleString()}`
-          });
-          setCurrentSession(createResponse.data.session);
-        }
-      } catch (err) {
-        console.error('Error with session:', err);
-        setError('Failed to prepare rehearsal session.');
-      }
-    };
+    // Start with results array
+    let filtered = [...results];
     
-    getOrCreateSession();
+    // Apply language filter
+    if (languageFilter !== 'all') {
+      filtered = filtered.filter(song => song.language === languageFilter);
+    }
+    
+    // Apply sorting
+    if (sortOrder === 'title') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOrder === 'artist') {
+      filtered.sort((a, b) => a.artist.localeCompare(b.artist));
+    }
+    // 'relevance' sorting is handled by the backend
+    
+    setFilteredResults(filtered);
+  }, [results, languageFilter, sortOrder]);
+  
+  // Get or create active session
+  const getOrCreateSession = useCallback(async () => {
+    try {
+      setActiveSessionState({ isCreating: true, error: null });
+      
+      // Check for active sessions
+      const response = await sessionAPI.getActiveSessions();
+      
+      if (response.data.sessions && response.data.sessions.length > 0) {
+        // Use the most recent active session
+        setCurrentSession(response.data.sessions[0]);
+      } else {
+        // Create a new session
+        const createResponse = await sessionAPI.createSession({
+          name: `Rehearsal ${new Date().toLocaleString()}`
+        });
+        
+        if (createResponse.data.success) {
+          setCurrentSession(createResponse.data.session);
+        } else {
+          throw new Error(createResponse.data.message || 'Failed to create session');
+        }
+      }
+      
+      setActiveSessionState({ isCreating: false, error: null });
+    } catch (err) {
+      console.error('Error with session:', err);
+      setActiveSessionState({ 
+        isCreating: false, 
+        error: 'Failed to prepare rehearsal session'
+      });
+    }
   }, []);
-
-  // Filter results by language
-  const filteredResults = languageFilter === 'all' 
-    ? results 
-    : results.filter(song => song.language === languageFilter);
+  
+  // Initialize session on component mount
+  useEffect(() => {
+    getOrCreateSession();
+  }, [getOrCreateSession]);
 
   const handleBack = () => {
     navigate('/admin');
   };
 
   const handleSelectSong = async (songId) => {
+    if (activeSessionState.isCreating) {
+      return; // Do nothing if we're still creating a session
+    }
+    
     try {
       if (!currentSession) {
-        setError('No active session found. Please refresh and try again.');
-        return;
+        // Try to get/create a session if we don't have one
+        await getOrCreateSession();
+        
+        if (!currentSession) {
+          setError('No active session found. Please refresh and try again.');
+          return;
+        }
       }
       
       // Emit select_song event via socket
-      if (socket) {
+      if (socket && connected) {
         socket.emit('select_song', {
           sessionId: currentSession._id,
           songId
         });
+        
+        // Navigate to live page
+        navigate(`/live?songId=${songId}&sessionId=${currentSession._id}`);
+      } else {
+        throw new Error('Socket connection not available');
       }
-      
-      // Navigate to live page
-      navigate(`/live?songId=${songId}&sessionId=${currentSession._id}`);
     } catch (error) {
       console.error('Error selecting song:', error);
-      setError('Failed to select song. Please try again.');
+      setError('Failed to select song. Please check your connection and try again.');
     }
   };
 
@@ -107,98 +161,202 @@ const ResultsAdmin = () => {
     setLanguageFilter(e.target.value);
   };
 
-  const handleKeyDown = (e, songId) => {
-    // Handle Enter or Space key
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleSelectSong(songId);
-    }
+  const handleSortOrderChange = (e) => {
+    setSortOrder(e.target.value);
+  };
+
+  const handleRetrySession = () => {
+    getOrCreateSession();
+  };
+
+  // Loading placeholder for song cards
+  const renderSongCardPlaceholders = () => {
+    return Array(6).fill(0).map((_, index) => (
+      <div key={`placeholder-${index}`} className="bg-surface rounded p-4">
+        <div className="flex items-start animate-pulse">
+          <div className="w-20 h-20 bg-gray-700 rounded mr-4"></div>
+          <div className="flex-1">
+            <div className="h-6 bg-gray-700 rounded mb-2 w-3/4"></div>
+            <div className="h-4 bg-gray-700 rounded mb-3 w-1/2"></div>
+            <div className="h-5 bg-gray-700 rounded w-16"></div>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <header className="mb-8">
-        <button 
+    <div className={`min-h-screen bg-background p-4 ${highContrast ? 'high-contrast' : ''}`}>
+      <header className="mb-6">
+        <Button 
           onClick={handleBack}
-          className="mb-4 p-2 rounded bg-surface text-text-light hover:bg-gray-700 transition-colors"
+          variant="ghost"
+          className="mb-4 flex items-center"
         >
-          &#8592; Back to Search
-        </button>
+          <span className="mr-2">&#8592;</span> Back to Search
+        </Button>
+        
         <h1 className="text-2xl font-bold text-text-light">
           Results for &ldquo;{query}&rdquo;
         </h1>
       </header>
 
-      {/* Filter controls */}
-      <div className="mb-6">
-        <label htmlFor="language-filter" className="text-text-muted mr-2">
-          Filter by language:
-        </label>
-        <select
-          id="language-filter"
-          value={languageFilter}
-          onChange={handleLanguageFilterChange}
-          className="bg-surface text-text-light p-2 rounded border border-gray-700"
-        >
-          <option value="all">All Languages</option>
-          <option value="English">English</option>
-          <option value="Hebrew">Hebrew</option>
-        </select>
+      {/* Filters and session status */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-wrap gap-3">
+          {/* Language filter */}
+          <div className="flex items-center">
+            <label htmlFor="language-filter" className="text-text-muted mr-2">
+              Language:
+            </label>
+            <select
+              id="language-filter"
+              value={languageFilter}
+              onChange={handleLanguageFilterChange}
+              className="bg-surface text-text-light p-2 rounded border border-gray-700"
+            >
+              <option value="all">All Languages</option>
+              <option value="English">English</option>
+              <option value="Hebrew">Hebrew</option>
+            </select>
+          </div>
+          
+          {/* Sort order */}
+          <div className="flex items-center">
+            <label htmlFor="sort-order" className="text-text-muted mr-2">
+              Sort by:
+            </label>
+            <select
+              id="sort-order"
+              value={sortOrder}
+              onChange={handleSortOrderChange}
+              className="bg-surface text-text-light p-2 rounded border border-gray-700"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="title">Song Title</option>
+              <option value="artist">Artist</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Session status indicator */}
+        <div className="flex items-center">
+          {activeSessionState.isCreating ? (
+            <div className="flex items-center text-text-muted">
+              <LoadingIndicator size="sm" className="mr-2" />
+              Preparing session...
+            </div>
+          ) : activeSessionState.error ? (
+            <div className="flex items-center">
+              <span className="text-error mr-2">{activeSessionState.error}</span>
+              <Button
+                onClick={handleRetrySession}
+                variant="secondary"
+                size="sm"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : currentSession ? (
+            <div className="flex items-center text-success">
+              <span className="w-2 h-2 bg-success rounded-full mr-2"></span>
+              Session ready
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <main>
         {loading ? (
-          <div className="flex justify-center items-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {renderSongCardPlaceholders()}
           </div>
         ) : error ? (
-          <div className="bg-error bg-opacity-20 text-error p-4 rounded">
-            {error}
-          </div>
+          <Card className="p-4 mb-6 bg-error bg-opacity-20 border border-error">
+            <p className="text-error">{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="primary"
+              className="mt-3"
+            >
+              Refresh Page
+            </Button>
+          </Card>
         ) : filteredResults.length === 0 ? (
           <div className="text-center py-10 text-text-muted">
-            <p className="mb-2">No songs found matching &ldquo;{query}&rdquo;</p>
+            <p className="mb-4 text-xl">No songs found matching &ldquo;{query}&rdquo;</p>
             {languageFilter !== 'all' && (
-              <p>Try changing your language filter or search query</p>
+              <p>Try changing your language filter or search for a different term</p>
             )}
+            <Button
+              onClick={handleBack}
+              variant="primary"
+              className="mt-6"
+            >
+              New Search
+            </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredResults.map(song => (
               <div 
                 key={song._id}
                 onClick={() => handleSelectSong(song._id)}
-                onKeyDown={(e) => handleKeyDown(e, song._id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelectSong(song._id);
+                  }
+                }}
                 role="button"
                 tabIndex={0}
                 aria-label={`Select song: ${song.title} by ${song.artist}`}
-                className="bg-surface rounded p-4 cursor-pointer hover:bg-gray-700 transition-colors"
+                className="bg-surface rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <div className="flex items-start">
+                <div className="relative">
                   {song.imageUrl ? (
                     <img 
                       src={song.imageUrl} 
                       alt={song.title}
-                      className="w-20 h-20 object-cover rounded mr-4"
+                      className="w-full h-40 object-cover"
                     />
                   ) : (
-                    <div className="w-20 h-20 bg-gray-700 rounded mr-4 flex items-center justify-center text-gray-500">
-                      No Image
+                    <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-500">
+                      <span className="text-2xl">🎵</span>
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-text-light" dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}>
-                      {song.title}
-                    </h3>
-                    <p className="text-text-muted" dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}>
-                      {song.artist}
+                  <span className={`absolute top-2 right-2 px-2 py-1 text-xs rounded-full ${
+                    song.language === 'Hebrew' ? 'bg-accent text-black' : 'bg-success text-white'
+                  }`}>
+                    {song.language}
+                  </span>
+                </div>
+                
+                <div className="p-4">
+                  <h3 
+                    className="text-xl font-bold text-text-light mb-1 truncate" 
+                    dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}
+                  >
+                    {song.title}
+                  </h3>
+                  <p 
+                    className="text-text-muted truncate" 
+                    dir={song.language === 'Hebrew' ? 'rtl' : 'ltr'}
+                  >
+                    {song.artist}
+                  </p>
+                  
+                  {song.year && (
+                    <p className="text-text-muted text-sm mt-2">
+                      Year: {song.year}
                     </p>
-                    <span className={`inline-block mt-2 px-2 py-1 text-xs rounded ${
-                      song.language === 'Hebrew' ? 'bg-accent' : 'bg-success'
-                    } text-black`}>
-                      {song.language}
-                    </span>
-                  </div>
+                  )}
+                  
+                  {song.genre && (
+                    <p className="text-text-muted text-sm">
+                      Genre: {song.genre}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
