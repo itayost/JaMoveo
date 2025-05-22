@@ -221,8 +221,7 @@ This project is created as part of a job application task for Moveo.
 ## Acknowledgments
 
 - Moveo for the interesting challenge
-- The band members who inspired this solution
-- Tab4U for song reference inspiration
+- The mucisians who inspired this solution
 
 ---
 
