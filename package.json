@@ -12,7 +12,7 @@
     "lint-staged": "lint-staged",
     "build": "cd client && npm ci && npm run build",
     "start": "cd server && npm ci && npm start",
-    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\""
   },
   "keywords": [
     "music",
