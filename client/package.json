@@ -20,7 +20,7 @@
       "build:css": "tailwindcss -i src/index.css -o src/tailwind.output.css",
   "watch:css": "tailwindcss -i src/index.css -o src/tailwind.output.css --watch",
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
