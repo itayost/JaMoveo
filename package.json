@@ -9,7 +9,11 @@
     "lint:client": "cd client && eslint --ext .js,.jsx src/",
     "lint:server": "cd server && eslint .",
     "format": "prettier --write \"**/*.{js,jsx,json,md,css}\"",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "build": "cd client && npm install && npm run build",
+    "start": "cd server && npm install && npm start",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "heroku-postbuild": "npm run build"
   },
   "keywords": [
     "music",
@@ -19,6 +23,10 @@
   ],
   "author": "Moveo",
   "license": "MIT",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
