@@ -27,16 +27,6 @@ const sampleSongs = [
     "year": 2017,
     "genre": "Pop",
     "key": "Em"
-  },
-  {
-    "title": "Hotel California",
-    "artist": "Eagles",
-    "language": "English",
-    "lyrics": "On a dark desert highway, cool wind in my hair\nWarm smell of colitas, rising up through the air\nUp ahead in the distance, I saw a shimmering light\nMy head grew heavy and my sight grew dim\nI had to stop for the night\n\nThere she stood in the doorway\nI heard the mission bell\nAnd I was thinking to myself\nThis could be heaven or this could be hell\nThen she lit up a candle and she showed me the way\nThere were voices down the corridor\nI thought I heard them say...\n\nWelcome to the Hotel California\nSuch a lovely place (Such a lovely place)\nSuch a lovely face\nPlenty of room at the Hotel California\nAny time of year (Any time of year)\nYou can find it here",
-    "chords": "Bm                    F#\nA                     E\nG                     D\nEm                    F#\n\nBm                    F#\nA                     E\nG                     D\nEm                    F#\n\nG                     D\nF#                    Bm\nG                     D\nEm                    F#\nG                     D\nF#",
-    "year": 1976,
-    "genre": "Rock",
-    "key": "Bm"
   }
 ];
 
