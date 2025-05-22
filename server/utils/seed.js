@@ -29,7 +29,7 @@ const seedDB = async () => {
         otherInstrument: 'Admin',
         isAdmin: true
       });
-      console.log('Created admin user (username: admin, password: admin123)');
+      console.log('Created admin user (username: , password: )');
     } else {
       console.log('Admin user already exists');
     }
