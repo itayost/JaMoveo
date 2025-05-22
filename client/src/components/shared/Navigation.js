@@ -1,4 +1,4 @@
-// client/src/components/shared/Navigation.js - Simplified Version
+// client/src/components/shared/Navigation.js
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 
 /**
  * Navigation component with fixed positioning
- * Sticks to the top of the viewport while scrolling
+ * 
  */
 const Navigation = () => {
   const { user, logout } = useAuth();

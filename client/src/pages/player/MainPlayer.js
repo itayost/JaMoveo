@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
-import { useTheme } from '../../context/ThemeContext';
 import { sessionAPI } from '../../services/api.service';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -12,7 +11,6 @@ import LoadingIndicator from '../../components/ui/LoadingIndicator';
 const MainPlayer = () => {
   const { user } = useAuth();
   const { socket, connected, joinSession } = useSocket();
-  const { highContrast } = useTheme();
   const navigate = useNavigate();
 
   // State
@@ -110,7 +108,7 @@ const MainPlayer = () => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center p-4 bg-background ${highContrast ? 'high-contrast' : ''}`}>
+    <div className={`min-h-screen flex flex-col items-center justify-center p-4 bg-background`}>
       <div className="w-full max-w-md">
         <Card className="p-6 text-center">
           <h1 className="text-3xl font-bold mb-6">Waiting for next song</h1>
