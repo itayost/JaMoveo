@@ -34,7 +34,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  // Only allow updating instrument - the main feature needed for the app
+  // Only allow updating instrument
   if (req.body.instrument) {
     // Validate instrument
     const validInstruments = ['guitar', 'bass', 'drums', 'vocals', 'keyboard', 'saxophone', 'other'];
