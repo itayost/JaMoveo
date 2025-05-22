@@ -2,7 +2,7 @@
 
 A real-time collaborative music rehearsal application for Moveo's jam sessions.
 
-## 🎵 Project Overview
+## Project Overview
 
 JaMoveo is a web application designed to enhance music rehearsals by allowing musicians to view synchronized song lyrics and chords from their mobile devices. The application enables an admin user to search for songs and display them to all connected musicians, with content tailored to each musician's instrument.
 
@@ -16,21 +16,21 @@ JaMoveo is a web application designed to enhance music rehearsals by allowing mu
 - **High-Contrast Display**: Readable interface even in smoky rehearsal rooms
 - **Multi-language Support**: Song search and display in both English and Hebrew
 
-## 🚀 Tech Stack
+## Tech Stack
 
 - **Frontend**: React.js, Socket.io client, Tailwind CSS
 - **Backend**: Node.js, Express, Socket.io
 - **Database**: MongoDB
 - **Authentication**: JWT, bcrypt
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (v16+)
 - [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
 - [MongoDB](https://www.mongodb.com/) (local installation or MongoDB Atlas)
 
-## 🔧 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone the repository
 
@@ -93,7 +93,7 @@ This will create:
 - A default regular user (username: user, password: password)
 - Sample songs in both English and Hebrew
 
-## 💻 Usage
+## Usage
 
 ### User Types
 
@@ -134,7 +134,6 @@ This will create:
 ### High-Contrast Mode
 - Toggle high-contrast mode for better visibility in smoky environments
 - Increases font size and enhances color contrast
-- Available through the accessibility settings button in the bottom-left corner
 
 ### Role-Based Content Display
 - Vocalists see only lyrics
@@ -144,9 +143,8 @@ This will create:
 ### Multi-language Support
 - Support for both English and Hebrew content
 - Proper right-to-left (RTL) display for Hebrew songs
-- Filter songs by language
 
-## 🛠 Development
+## Development
 
 ### Project Structure
 
@@ -193,9 +191,9 @@ jamoveo/
 #### Sessions
 - `POST /api/sessions` - Create a new session (admin only)
 - `GET /api/sessions/active` - Get active sessions
-- `GET /api/sessions/:id` - Get session details
 - `POST /api/sessions/:id/join` - Join a session
-- `POST /api/sessions/:id/end` - End a session (admin only)
+- `POST /api/sessions/:id/set-song/:songId` - Set active song (admin only)
+- `POST /api/sessions/:id/clear-song` - Clear active song (admin only)
 
 ### Socket.io Events
 
@@ -215,7 +213,7 @@ jamoveo/
 - `song_quit` - Song ended notification
 - `autoscroll_state` - Auto-scroll state update
 
-## 🚀 Deployment
+## Deployment
 
 The application can be deployed as follows:
 
@@ -227,22 +225,3 @@ The application can be deployed as follows:
 ### Frontend Deployment
 1. Build the React application
 2. Deploy the built files to a static hosting service
-
-## 🔍 Troubleshooting
-
-### Common Issues
-- **Socket Connection Problems**: Ensure the server is running and accessible from the client
-- **Database Connection Errors**: Check MongoDB connection string
-- **Authentication Issues**: Verify JWT secret and token expiration settings
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-Made with ❤️ for Moveo's music enthusiasts
