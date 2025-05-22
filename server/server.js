@@ -48,6 +48,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/sessions', sessionRoutes);
 
+//Seeding songs and users to initial DB
 // Seeding songs and users with inline chord format
 app.post('/api/seed', async (req, res) => {
   try {
@@ -261,7 +262,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
   
   // Handle React routing - return all requests to React app
-  app.get('*', (req, res) => {
+  app.get('/*path', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
   });
 }
@@ -276,7 +277,5 @@ const io = setupSocket(server);
 // Start server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 Seed endpoint: POST http://localhost:${PORT}/api/seed`);
-  console.log(`🔍 Songs check: GET http://localhost:${PORT}/api/songs-check`);
+  console.log(`Server running on port ${PORT}`);
 });
