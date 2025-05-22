@@ -166,7 +166,7 @@ JaMoveo/
 └── package.json          # Root package file
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Register new user
@@ -183,7 +183,7 @@ JaMoveo/
 - `POST /api/sessions` - Create session (admin)
 - `POST /api/sessions/:id/join` - Join session
 
-## 🔄 Socket Events
+## Socket Events
 
 ### Client → Server
 - `join_session` - Join a rehearsal session
