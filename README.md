@@ -2,11 +2,6 @@
 
 A real-time collaborative music rehearsal application that synchronizes song lyrics and chords across band members' devices.
 
-**Live Demo:** https://jamoveost.up.railway.app  
-**Default Test Credentials:**
-- Regular User: `user` / `password`
-- Admin User: `admin` / `adminpassword`
-
 ## Overview
 
 JaMoveo transforms traditional band rehearsals by providing a synchronized digital platform where musicians can view song lyrics and chords on their mobile devices. An admin controls what everyone sees in real-time, eliminating the need for paper sheets and ensuring everyone is literally on the same page.
