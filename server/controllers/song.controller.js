@@ -22,7 +22,11 @@ const getSongs = asyncHandler(async (req, res) => {
   
   // Text search if query provided (title, artist, or lyrics)
   if (query.trim() !== '') {
-    filter.$text = { $search: query };
+    filter.$or = [
+      { title: { $regex: query, $options: 'i' } },
+      { artist: { $regex: query, $options: 'i' } },
+      { lyrics: { $regex: query, $options: 'i' } }
+    ];
   }
   
   // Filter by language if provided
@@ -35,24 +39,18 @@ const getSongs = asyncHandler(async (req, res) => {
   
   // Sorting options
   let sort = {};
-  if (query.trim() !== '' && sortBy === 'relevance') {
-    // When using text search and sorting by relevance, use text score
-    sort = { score: { $meta: 'textScore' } };
-  } else if (sortBy === 'title') {
+  if (sortBy === 'title') {
     sort = { title: 1 }; // Ascending by title
   } else if (sortBy === 'artist') {
     sort = { artist: 1 }; // Ascending by artist
   } else if (sortBy === 'newest') {
     sort = { createdAt: -1 }; // Descending by creation date
   } else {
-    // Default sort by creation date
+    // Default sort by creation date (including relevance)
     sort = { createdAt: -1 };
   }
   
-  // Create projection for text search
-  const projection = query.trim() !== '' ? 
-    { score: { $meta: 'textScore' } } : 
-    {};
+  const projection = {};
   
   // Execute query with projection and sorting
   const songs = await Song.find(
