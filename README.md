@@ -1,227 +1,234 @@
 # JaMoveo
 
-A real-time collaborative music rehearsal application for Moveo's jam sessions.
+A real-time collaborative music rehearsal application that synchronizes song lyrics and chords across band members' devices.
 
-## Project Overview
+**Live Demo:** https://jamoveost.up.railway.app  
+**Default Test Credentials:**
+- Regular User: `user` / `password`
+- Admin User: `admin` / `adminpassword`
 
-JaMoveo is a web application designed to enhance music rehearsals by allowing musicians to view synchronized song lyrics and chords from their mobile devices. The application enables an admin user to search for songs and display them to all connected musicians, with content tailored to each musician's instrument.
+## Overview
 
-### Key Features
+JaMoveo transforms traditional band rehearsals by providing a synchronized digital platform where musicians can view song lyrics and chords on their mobile devices. An admin controls what everyone sees in real-time, eliminating the need for paper sheets and ensuring everyone is literally on the same page.
 
-- **User Authentication**: Register with your instrument type and log in securely
-- **Role-based Content**: Singers see lyrics, instrumentalists see chords and lyrics
-- **Real-time Synchronization**: Admin controls what everyone sees simultaneously
-- **Auto-scroll Functionality**: Hands-free scrolling for active playing
-- **Mobile-Optimized Interface**: Designed for use on phones in rehearsal settings
-- **High-Contrast Display**: Readable interface even in smoky rehearsal rooms
-- **Multi-language Support**: Song search and display in both English and Hebrew
+## Features
+
+### For Musicians
+- **Instrument-Based Registration**: Sign up with your specific instrument (guitar, bass, drums, vocals, keyboard, saxophone, or other)
+- **Role-Based Content**: Vocalists see only lyrics, while instrumentalists see both lyrics and chords
+- **Auto-Scroll**: Hands-free scrolling with adjustable speed for uninterrupted playing
+- **High Contrast Mode**: Enhanced visibility in smoky rehearsal environments
+- **Mobile-Optimized**: Large fonts and touch-friendly interface designed for phones
+
+### For Admins
+- **Song Search**: Search through the song database in English or Hebrew
+- **Real-Time Control**: Select songs that instantly appear on all connected devices
+- **Session Management**: Create and control rehearsal sessions
+- **Quit Functionality**: End songs and return all users to the waiting screen
+
+### Technical Features
+- **Real-Time Synchronization**: Socket.io ensures zero-latency updates
+- **Bilingual Support**: Proper RTL layout for Hebrew songs
+- **JWT Authentication**: Secure user sessions with role-based access
+- **Responsive Design**: Works seamlessly on all device sizes
+- **Connection Status**: Visual indicators for connection issues
 
 ## Tech Stack
 
-- **Frontend**: React.js, Socket.io client, Tailwind CSS
-- **Backend**: Node.js, Express, Socket.io
-- **Database**: MongoDB
-- **Authentication**: JWT, bcrypt
+### Frontend
+- **React.js** (v19.1.0) - UI framework
+- **Tailwind CSS** - Styling with custom Apple-inspired design
+- **Socket.io Client** - Real-time communication
+- **React Router** - Client-side routing
+- **Axios** - HTTP client
 
-## Prerequisites
+### Backend
+- **Node.js** with **Express** (v5.1.0) - Server framework
+- **Socket.io** - WebSocket implementation
+- **MongoDB** with **Mongoose** - Database and ODM
+- **JWT** - Authentication tokens
+- **bcrypt** - Password hashing
 
-Before you begin, ensure you have the following installed:
-- [Node.js](https://nodejs.org/) (v16+)
-- [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
-- [MongoDB](https://www.mongodb.com/) (local installation or MongoDB Atlas)
+### Deployment
+- **Railway** - Production hosting platform
+- **GitHub** - Version control
 
-## Installation & Setup
+## Getting Started
 
-### 1. Clone the repository
+### Prerequisites
+- Node.js (v16+)
+- MongoDB (local or Atlas)
+- npm or yarn
 
-```bash
-git clone https://github.com/your-username/jamoveo.git
-cd jamoveo
-```
+### Installation
 
-### 2. Install root dependencies
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/itayost/JaMoveo.git
+   cd JaMoveo
+   ```
 
-```bash
-npm install
-```
+2. **Install dependencies**
+   ```bash
+   # Install root dependencies
+   npm install
 
-### 3. Backend Setup
+   # Install server dependencies
+   cd server
+   npm install
 
-```bash
-# Navigate to server directory
-cd server
+   # Install client dependencies
+   cd ../client
+   npm install
+   ```
 
-# Install dependencies
-npm install
+3. **Environment Setup**
+   
+   Create a `.env` file in the `server` directory:
+   ```env
+   # MongoDB Connection
+   MONGODB_URI=mongodb://localhost:27017/jamoveo
 
-# Create .env file from example
-cp .env.example .env
+   # JWT Configuration
+   JWT_SECRET=your-secret-key-here
+   JWT_EXPIRES_IN=7d
 
-# Edit the .env file with your configuration
-# - Set a secure JWT_SECRET
-# - Configure MongoDB connection
-# - Set ADMIN_SIGNUP_CODE for admin registration
+   # Admin Registration Code
+   ADMIN_SIGNUP_CODE=your-admin-code
 
-# Start the server in development mode
-npm run dev
-```
+   # Server Port
+   PORT=5001
 
-### 4. Frontend Setup
+   # Client URL (for CORS)
+   CLIENT_URL=http://localhost:3000
+   ```
 
-```bash
-# Navigate to client directory (from project root)
-cd client
+4. **Seed the Database**
+   ```bash
+   cd server
+   npm run seed
+   ```
+   This creates sample songs and default users.
 
-# Install dependencies
-npm install
+5. **Start Development Servers**
+   ```bash
+   # From project root
+   npm run dev
+   ```
+   This starts both frontend (port 3000) and backend (port 5001).
 
-# Start the client in development mode
-npm start
-```
+## Usage Guide
 
-### 5. Seed Initial Data
-
-To populate the database with sample song data and create default users:
-
-```bash
-# From the server directory
-npm run seed
-```
-
-This will create:
-- A default admin user (username: admin, password: adminpassword)
-- A default regular user (username: user, password: password)
-- Sample songs in both English and Hebrew
-
-## Usage
-
-### User Types
+### Creating Accounts
 
 #### Regular Musician
-- Register with your instrument
-- Log in and wait for the admin to select a song
-- View lyrics and/or chords according to your instrument
-- Use auto-scroll for hands-free playing
+1. Navigate to `http://localhost:3000/signup`
+2. Enter username, password, and select your instrument
+3. Click "Sign Up"
 
 #### Admin User
-- Register using the special admin URL (http://localhost:3000/admin-signup)
-- Enter the admin code from your .env file (ADMIN_SIGNUP_CODE)
-- Log in to access the admin dashboard
-- Search for songs in English or Hebrew
-- Select songs to display to all connected musicians
-- Control the rehearsal session
-
-### Creating User Accounts
-
-#### Regular User Registration
-1. Visit `http://localhost:3000/signup`
-2. Enter a username and password
-3. Select your instrument from the dropdown
-4. Click "Create Account"
-
-#### Admin Registration
-1. Visit `http://localhost:3000/admin-signup` 
-2. Enter a username, password and the admin code (from .env file)
+1. Navigate to `http://localhost:3000/admin-signup`
+2. Enter username, password, and the admin code from `.env`
 3. Click "Create Admin Account"
 
-## 🎵 Features In Depth
+### Running a Rehearsal
 
-### Auto-Scroll Functionality
-- Tap the "Auto-Scroll" button to enable hands-free scrolling
-- Adjust speed with the + and - buttons
-- Admin can control scrolling for all connected users simultaneously
+#### As Admin:
+1. Log in with admin credentials
+2. Search for a song using the search bar
+3. Click on a song from the results to display it to all users
+4. Click "Quit" to end the current song
 
-### High-Contrast Mode
-- Toggle high-contrast mode for better visibility in smoky environments
-- Increases font size and enhances color contrast
+#### As Musician:
+1. Log in with your credentials
+2. Wait on the main screen for the admin to select a song
+3. When a song is selected, view lyrics/chords based on your instrument
+4. Use auto-scroll for hands-free reading
 
-### Role-Based Content Display
-- Vocalists see only lyrics
-- Instrumentalists see both chords and lyrics
-- Admin sees the full interface with control buttons
-
-### Multi-language Support
-- Support for both English and Hebrew content
-- Proper right-to-left (RTL) display for Hebrew songs
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
-jamoveo/
-├── client/                  # Frontend React application
-│   ├── public/              # Static files
-│   └── src/                 # React source code
-│       ├── components/      # Reusable components
-│       ├── context/         # React context providers
-│       ├── hooks/           # Custom React hooks
-│       ├── pages/           # Page components
-│       ├── services/        # API services
-│       └── utils/           # Utility functions
+JaMoveo/
+├── client/                  # React frontend
+│   ├── public/             # Static assets
+│   └── src/
+│       ├── components/     # Reusable UI components
+│       ├── context/        # React Context providers
+│       ├── hooks/          # Custom React hooks
+│       ├── pages/          # Page components
+│       ├── services/       # API service layer
+│       └── utils/          # Helper functions
 │
-├── server/                  # Backend Node.js application
-│   ├── config/              # Configuration files
-│   ├── controllers/         # Route controllers
-│   ├── data/                # Sample data
-│   ├── middleware/          # Express middleware
-│   ├── models/              # Mongoose models
-│   ├── routes/              # API routes
-│   ├── socket/              # Socket.io implementation
-│   └── utils/               # Utility functions
-└── package.json             # Root package.json for development tools
+├── server/                 # Node.js backend
+│   ├── config/            # Configuration files
+│   ├── controllers/       # Route controllers
+│   ├── middleware/        # Express middleware
+│   ├── models/           # Mongoose schemas
+│   ├── routes/           # API routes
+│   ├── socket/           # Socket.io handlers
+│   └── utils/            # Utility functions
+│
+└── package.json          # Root package file
 ```
 
-### Backend API Overview
+## 🔌 API Endpoints
 
-#### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/admin-register` - Register an admin user
-- `POST /api/auth/login` - Log in a user
-- `POST /api/auth/logout` - Log out current user
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/admin-register` - Register admin user
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user
 
-#### Users
-- `GET /api/users/profile` - Get user profile
-- `PUT /api/users/profile` - Update user profile
+### Songs
+- `GET /api/songs` - Search songs
+- `GET /api/songs/:id` - Get specific song
 
-#### Songs
-- `GET /api/songs` - Search songs with query parameters
-- `GET /api/songs/:id` - Get a specific song
+### Sessions
+- `GET /api/sessions/active` - Get active session
+- `POST /api/sessions` - Create session (admin)
+- `POST /api/sessions/:id/join` - Join session
 
-#### Sessions
-- `POST /api/sessions` - Create a new session (admin only)
-- `GET /api/sessions/active` - Get active sessions
-- `POST /api/sessions/:id/join` - Join a session
-- `POST /api/sessions/:id/set-song/:songId` - Set active song (admin only)
-- `POST /api/sessions/:id/clear-song` - Clear active song (admin only)
+## 🔄 Socket Events
 
-### Socket.io Events
-
-#### Client-to-Server Events
+### Client → Server
 - `join_session` - Join a rehearsal session
-- `leave_session` - Leave the current session
-- `select_song` - Select a song to display (admin only)
-- `quit_song` - End the current song display (admin only)
-- `toggle_autoscroll` - Toggle auto-scroll feature
-- `scroll_position` - Update scroll position
+- `select_song` - Admin selects a song
+- `quit_song` - Admin ends current song
 
-#### Server-to-Client Events
-- `session_state` - Session state update
-- `user_joined` - User joined notification
-- `user_left` - User left notification
-- `song_selected` - Song selected notification
-- `song_quit` - Song ended notification
-- `autoscroll_state` - Auto-scroll state update
+### Server → Client
+- `song_selected` - New song selected
+- `song_quit` - Current song ended
+- `user_joined` - User joined session
+- `user_left` - User left session
 
 ## Deployment
 
-The application can be deployed as follows:
+The app is deployed on Railway. For your own deployment:
 
-### Backend Deployment
-1. Set environment variables in production
-2. Build and deploy the Node.js server
-3. Ensure MongoDB is accessible
+1. Fork this repository
+2. Create a Railway account
+3. Connect your GitHub repository
+4. Add environment variables in Railway dashboard
+5. Deploy!
 
-### Frontend Deployment
-1. Build the React application
-2. Deploy the built files to a static hosting service
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is created as part of a job application task for Moveo.
+
+## Acknowledgments
+
+- Moveo for the interesting challenge
+- The band members who inspired this solution
+- Tab4U for song reference inspiration
+
+---
+
+Built with ❤️ by [Itay Ost](https://github.com/itayost)
