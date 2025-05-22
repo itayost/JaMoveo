@@ -4,7 +4,7 @@ const router = express.Router();
 const userController = require('../controllers/user.controller');
 const { protect } = require('../middleware/authMiddleware');
 
-// User profile routes - only the essential ones needed
+// User profile routes
 router.get('/profile', protect, userController.getUserProfile);
 router.put('/profile', protect, userController.updateUserProfile);
 

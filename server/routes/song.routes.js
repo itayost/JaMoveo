@@ -4,7 +4,7 @@ const router = express.Router();
 const songController = require('../controllers/song.controller');
 const { protect } = require('../middleware/authMiddleware');
 
-// Simplified song routes
+// Song routes
 router.get('/', protect, songController.getSongs); // Search songs
 router.get('/:id', protect, songController.getSongById); // Get single song
 

@@ -26,7 +26,7 @@ const errorHandler = (err, req, res, next) => {
       method: req.method
     });
   } else {
-    // Simplified logging for production
+    //logging for production
     console.error(`${err.name}: ${err.message} (${req.method} ${req.path})`);
   }
   
@@ -66,7 +66,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
   
-  // Handle cast errors (often from invalid MongoDB ObjectIDs)
+  // Handle cast error
   if (err.name === 'CastError') {
     return res.status(400).json({
       success: false,

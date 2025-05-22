@@ -1,4 +1,4 @@
-// client/src/pages/LivePage.js - Clean inline chord implementation
+// client/src/pages/LivePage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -277,16 +277,6 @@ const LivePage = () => {
             </Button>
           )}
         </div>
-      </div>
-      
-      {/* Scroll position indicator */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 h-32 w-1 bg-gray-700 rounded-full z-30 overflow-hidden">
-        <div 
-          className="absolute bottom-0 w-full bg-blue-500 rounded-full"
-          style={{ 
-            height: `${Math.min(100, Math.max(0, (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100))}%` 
-          }}
-        ></div>
       </div>
     </div>
   );

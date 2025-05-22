@@ -3,13 +3,10 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // Add more robust connection options for production
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      // These options ensure robust connection handling
       serverSelectionTimeoutMS: 30000, // Timeout after 30 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
       connectTimeoutMS: 30000, // Give up initial connection after 30 seconds
-      // Auto-index creation is set to true for development but should be false in production
       autoIndex: process.env.NODE_ENV !== 'production'
     });
     

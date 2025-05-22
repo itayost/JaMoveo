@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Apple inspired color palette
+        // color palette
         primary: {
           DEFAULT: '#007AFF', // iOS blue
           light: '#5AC8FA',
@@ -35,7 +35,7 @@ module.exports = {
           pink: '#FF2D55', // iOS pink
           indigo: '#5856D6', // iOS indigo
         },
-        // UI colors with proper Apple-like dark theme
+        // UI colors
         background: {
           light: '#F2F2F7', // iOS light background
           DEFAULT: '#1C1C1E', // iOS dark background
@@ -53,7 +53,7 @@ module.exports = {
           dark: '#1C1C1E', // Dark text for light backgrounds
           emphasis: '#FFFFFF', // Bright white for emphasis
         },
-        // Status colors - iOS inspired
+        // Status colors
         success: {
           DEFAULT: '#34C759', // iOS green
           light: '#E3FFF1',
@@ -114,7 +114,7 @@ module.exports = {
         ],
       },
       fontSize: {
-        // iOS-inspired text sizes
+        // text sizes
         'base-large': '1.0625rem', // 17px
         'xl-large': '1.3125rem',   // 21px
         '2xl-large': '1.5rem',     // 24px
@@ -122,10 +122,10 @@ module.exports = {
         '4xl-large': '2.5rem',     // 40px
       },
       borderRadius: {
-        'ios': '0.75rem', // Apple's typical corner radius
-        'ios-lg': '1.25rem', // Larger iOS style radius
-        'ios-xl': '1.75rem', // Extra large iOS style radius
-        'ios-full': '9999px', // Full rounded like iOS buttons
+        'ios': '0.75rem', // corner radius
+        'ios-lg': '1.25rem', // Larger radius
+        'ios-xl': '1.75rem', // Extra large radius
+        'ios-full': '9999px', // Full rounded
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -170,7 +170,7 @@ module.exports = {
   plugins: [
     function({ addComponents, theme }) {
       addComponents({
-        // iOS-style button
+        // button
         '.ios-button': {
           borderRadius: theme('borderRadius.ios-full'),
           fontWeight: theme('fontWeight.medium'),
@@ -198,14 +198,14 @@ module.exports = {
             backgroundColor: theme('colors.surface.DEFAULT'),
           },
         },
-        // iOS-style card
+        // card
         '.ios-card': {
           backgroundColor: theme('colors.surface.DEFAULT'),
           borderRadius: theme('borderRadius.ios-lg'),
           boxShadow: theme('boxShadow.ios'),
           overflow: 'hidden',
         },
-        // iOS-style input
+        // input
         '.ios-input': {
           backgroundColor: theme('colors.surface.DEFAULT'),
           borderRadius: theme('borderRadius.ios'),
@@ -217,28 +217,28 @@ module.exports = {
             borderColor: theme('colors.primary.DEFAULT'),
           },
         },
-        // iOS-style sheet modal
+        // sheet modal
         '.ios-sheet': {
           backgroundColor: theme('colors.surface.DEFAULT'),
           borderTopLeftRadius: theme('borderRadius.ios-xl'),
           borderTopRightRadius: theme('borderRadius.ios-xl'),
           boxShadow: theme('boxShadow.ios-lg'),
         },
-        // iOS navbar style with blur
+        // navbar
         '.ios-navbar': {
           backdropFilter: 'blur(12px) saturate(180%)',
           backgroundColor: 'rgba(28, 28, 30, 0.8)',
           borderBottomWidth: '0.5px',
           borderBottomColor: 'rgba(142, 142, 147, 0.2)',
         },
-        // iOS tab bar style
+        // tab bar
         '.ios-tabbar': {
           backdropFilter: 'blur(12px) saturate(180%)',
           backgroundColor: 'rgba(28, 28, 30, 0.8)',
           borderTopWidth: '0.5px',
           borderTopColor: 'rgba(142, 142, 147, 0.2)',
         },
-        // iOS toggle
+        // toggle
         '.ios-toggle': {
           position: 'relative',
           width: '51px',
