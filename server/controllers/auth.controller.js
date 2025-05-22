@@ -160,53 +160,6 @@ const registerAdmin = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Create admin user by existing admin
- * @route   POST /api/auth/create-admin
- * @access  Private/Admin
- */
-const createAdmin = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
-
-  // Validate request
-  if (!username || !password) {
-    res.status(400);
-    throw new Error('Please provide username and password');
-  }
-
-  // Check if user already exists
-  const userExists = await User.findOne({ username });
-
-  if (userExists) {
-    res.status(409);
-    throw new Error('Username already exists');
-  }
-
-  // Create new admin user
-  const user = await User.create({
-    username,
-    password,
-    instrument: 'other',
-    otherInstrument: 'Admin',
-    isAdmin: true
-  });
-
-  if (user) {
-    res.status(201).json({
-      success: true,
-      message: 'Admin user created successfully',
-      user: {
-        id: user._id,
-        username: user.username,
-        isAdmin: user.isAdmin
-      }
-    });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
-  }
-});
-
-/**
  * @desc    Auth user & get token
  * @route   POST /api/auth/login
  * @access  Public
@@ -299,56 +252,12 @@ const logout = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * @desc    Verify token validity
- * @route   GET /api/auth/verify
- * @access  Public
- */
-const verifyToken = asyncHandler(async (req, res) => {
-  const token = req.query.token || req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    res.status(400);
-    throw new Error('No token provided');
-  }
 
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Find user
-    const user = await User.findById(decoded.id).select('-password');
-    
-    if (!user) {
-      res.status(401);
-      throw new Error('User not found');
-    }
-    
-    res.json({
-      success: true,
-      isValid: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        isAdmin: user.isAdmin
-      }
-    });
-  } catch (error) {
-    // Token is invalid or expired
-    res.json({
-      success: true,
-      isValid: false,
-      error: error.name
-    });
-  }
-});
 
 module.exports = {
   registerUser,
   registerAdmin,
-  createAdmin,
   loginUser,
   getMe,
-  logout,
-  verifyToken
+  logout
 };
