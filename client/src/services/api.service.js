@@ -126,14 +126,7 @@ export const userAPI = {
    * Get current user profile
    * @returns {Promise<Object>} Response with user profile data
    */
-  getProfile: () => api.get('/users/profile'),
-  
-  /**
-   * Update user profile
-   * @param {Object} userData - Updated user data
-   * @returns {Promise<Object>} Response with updated user data
-   */
-  updateProfile: (userData) => api.put('/users/profile', userData)
+  getProfile: () => api.get('/users/profile')
 };
 
 /**
@@ -163,29 +156,7 @@ export const songAPI = {
    * @param {string} id - Song ID
    * @returns {Promise<Object>} Response with song data
    */
-  getSong: (id) => api.get(`/songs/${id}`),
-  
-  /**
-   * Create a new song (admin only)
-   * @param {Object} songData - Song data
-   * @returns {Promise<Object>} Response with created song data
-   */
-  createSong: (songData) => api.post('/songs', songData),
-  
-  /**
-   * Update an existing song (admin only)
-   * @param {string} id - Song ID
-   * @param {Object} songData - Updated song data
-   * @returns {Promise<Object>} Response with updated song data
-   */
-  updateSong: (id, songData) => api.put(`/songs/${id}`, songData),
-  
-  /**
-   * Delete a song (admin only)
-   * @param {string} id - Song ID
-   * @returns {Promise<Object>} Response with success status
-   */
-  deleteSong: (id) => api.delete(`/songs/${id}`)
+  getSong: (id) => api.get(`/songs/${id}`)
 };
 
 /**
@@ -203,13 +174,6 @@ export const sessionAPI = {
     }),
   
   /**
-   * Get session by ID
-   * @param {string} id - Session ID
-   * @returns {Promise<Object>} Response with session data
-   */
-  getSession: (id) => api.get(`/sessions/${id}`),
-  
-  /**
    * Create a new session (admin only)
    * @param {Object} [sessionData={}] - Session data
    * @returns {Promise<Object>} Response with created session data
@@ -221,14 +185,7 @@ export const sessionAPI = {
    * @param {string} id - Session ID
    * @returns {Promise<Object>} Response with session data
    */
-  joinSession: (id) => api.post(`/sessions/${id}/join`),
-  
-  /**
-   * End a session (admin only)
-   * @param {string} id - Session ID
-   * @returns {Promise<Object>} Response with success status
-   */
-  endSession: (id) => api.post(`/sessions/${id}/end`)
+  joinSession: (id) => api.post(`/sessions/${id}/join`)
 };
 
 /**
@@ -275,8 +232,6 @@ export const socketEvents = {
   LEAVE_SESSION: 'leave_session',
   SELECT_SONG: 'select_song',
   QUIT_SONG: 'quit_song',
-  TOGGLE_AUTOSCROLL: 'toggle_autoscroll',
-  SCROLL_POSITION: 'scroll_position',
   
   // Server-to-Client events
   SESSION_STATE: 'session_state',

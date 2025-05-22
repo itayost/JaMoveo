@@ -1,4 +1,6 @@
 // client/src/App.js
+// Main Application Component for JaMoveo
+// Handles routing, authentication state, and global UI elements like session expiration and connection warnings
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
@@ -27,6 +29,15 @@ import ResultsAdmin from './pages/admin/ResultsAdmin';
 // Routing Components
 import ProtectedRoute from './utils/ProtectedRoute';
 
+/**
+ * Main App Component
+ * 
+ * This is the root component that manages:
+ * - Authentication state and routing
+ * - Socket connection monitoring
+ * - Global UI feedback (session expired, connection issues)
+ * - Route protection based on user roles
+ */
 function App() {
   // Authentication state
   const { user, loading, error, initialized } = useAuth();
@@ -40,23 +51,31 @@ function App() {
   // Connection warning state
   const [showConnectionWarning, setShowConnectionWarning] = useState(false);
   
-  // Show session expired dialog when auth error is set
+   /**
+   * Effect: Monitor authentication errors and show session expired modal
+   * This helps users understand when they need to log in again
+   */
   useEffect(() => {
     if (initialized && error && error.includes('session has expired')) {
       setShowSessionExpired(true);
     }
   }, [error, initialized]);
   
-  // Show connection warning after delay if socket isn't connecting
+  /**
+   * Effect: Monitor socket connection and show connection warnings
+   * This provides feedback when real-time features might not work
+   */
   useEffect(() => {
     let timeoutId;
-    
+
+    // Show warning if socket connection fails for authenticated users
     if (!connected && !reconnecting && socketError) {
       // Show warning after 5 seconds if still not connected
       timeoutId = setTimeout(() => {
         setShowConnectionWarning(true);
       }, 5000);
     } else {
+      // Hide warning when connection is restored
       setShowConnectionWarning(false);
     }
     
@@ -65,7 +84,10 @@ function App() {
     };
   }, [connected, reconnecting, socketError]);
   
-  // Wait for auth to initialize before rendering routes
+  /**
+   * Show loading screen while authentication is being initialized
+   * This prevents flashing of login page before auth state is determined
+   */
   if (loading || !initialized) {
     return <LoadingScreen message="Loading JaMoveo..." />;
   }

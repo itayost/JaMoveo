@@ -1,8 +1,10 @@
 // client/src/context/AuthContext.js
+// Authentication Context Provider for JaMoveo
+// Manages user authentication state, JWT tokens, and provides auth methods throughout the app
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI, errorUtils } from '../services/api.service';
 
-// Create the auth context
+// Create the auth context - will be consumed by components that need auth state
 const AuthContext = createContext();
 
 /**
@@ -240,36 +242,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Update current user profile
-   * @param {Object} userData - Updated user data
-   * @returns {Promise<boolean>} Success status
-   */
-  const updateProfile = async (userData) => {
-    try {
-      setError(''); // Clear any previous errors
-      setLoading(true);
-      
-      // Call update profile API
-      const response = await authAPI.updateProfile(userData);
-      
-      if (response.data.success) {
-        // Update user in state
-        setUser(response.data.user);
-        return true;
-      } else {
-        setError(response.data.message || 'Failed to update profile. Please try again.');
-        return false;
-      }
-    } catch (error) {
-      console.error('Update profile error:', error);
-      setError(errorUtils.getErrorMessage(error));
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Provide auth context values
   const value = {
     user,
@@ -280,8 +252,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
-    registerAdmin,
-    updateProfile
+    registerAdmin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

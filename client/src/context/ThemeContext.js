@@ -1,19 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create the theme context
 const ThemeContext = createContext();
 
 // Custom hook to use the theme context
 export const useTheme = () => useContext(ThemeContext);
 
 /**
- * Simplified Theme provider component
+ * Theme provider component
  */
 export const ThemeProvider = ({ children }) => {
-  // Only keep high contrast state
   const [highContrast, setHighContrast] = useState(false);
   
-  // Toggle high contrast mode
   const toggleHighContrast = () => {
     const newValue = !highContrast;
     setHighContrast(newValue);
@@ -40,10 +37,8 @@ export const ThemeProvider = ({ children }) => {
   
   // Context value to provide
   const value = {
-    // State
     highContrast,
     
-    // Methods
     toggleHighContrast
   };
   

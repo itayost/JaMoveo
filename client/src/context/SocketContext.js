@@ -163,21 +163,6 @@ export const SocketProvider = ({ children }) => {
   }, [socket, connected]);
 
   /**
-   * Leave the current session
-   */
-  const leaveSession = useCallback(() => {
-    if (!socket || !connected || !currentSession) {
-      console.error('Cannot leave session: Socket not connected or no active session');
-      return false;
-    }
-    
-    console.log('Leaving current session');
-    socket.emit('leave_session');
-    setCurrentSession(null);
-    return true;
-  }, [socket, connected, currentSession]);
-
-  /**
    * Select a song for the current session (admin only)
    */
   const selectSong = useCallback((sessionId, songId) => {
@@ -205,24 +190,6 @@ export const SocketProvider = ({ children }) => {
     return true;
   }, [socket, connected]);
 
-  /**
-   * Toggle auto-scroll state in the current session
-   */
-  const toggleAutoScroll = useCallback((sessionId, enabled, speed = 1) => {
-    if (!socket || !connected) {
-      console.error('Cannot toggle auto-scroll: Socket not connected');
-      return false;
-    }
-    
-    console.log(`Toggling auto-scroll (${enabled ? 'enabled' : 'disabled'}) for session ${sessionId}`);
-    socket.emit('toggle_autoscroll', {
-      sessionId,
-      enabled,
-      speed
-    });
-    return true;
-  }, [socket, connected]);
-
   // Values to provide in context
   const contextValue = {
     socket,
@@ -231,12 +198,9 @@ export const SocketProvider = ({ children }) => {
     reconnecting,
     currentSession,
     connectedUsers,
-    // Socket actions
     joinSession,
-    leaveSession,
     selectSong,
     quitSong,
-    toggleAutoScroll
   };
 
   return (
