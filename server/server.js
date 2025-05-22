@@ -22,7 +22,7 @@ const server = http.createServer(app);
 // Connect to MongoDB
 connectDB();
 
-// Simple CORS configuration
+// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.CLIENT_URL 
@@ -30,11 +30,11 @@ app.use(cors({
   credentials: true
 }));
 
-// Basic middleware
+// middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Basic logging in development
+// logging in development
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, res, next) => {
     console.log(`${req.method} ${req.originalUrl}`);
@@ -47,6 +47,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/sessions', sessionRoutes);
+
+//Seeding songs and users to initial DB
+app.post('/api/seed', async (req, res) => {
+  try {
+    const seedDB = require('./utils/seed.js');
+    const result = await seedDB();
+    res.json(result);
+  } catch (error) {
+    console.error('Seed error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 if (process.env.NODE_ENV === 'production') {
   // Set static folder
