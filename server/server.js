@@ -48,8 +48,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-//Seeding songs and users to initial DB
-// Replace your seed endpoint with this more detailed version
+// Seeding songs and users with inline chord format
 app.post('/api/seed', async (req, res) => {
   try {
     console.log('🌱 Seed endpoint called');
@@ -62,27 +61,109 @@ app.post('/api/seed', async (req, res) => {
     // Check database connection
     console.log('📊 Database connection state:', require('mongoose').connection.readyState);
     
-    // Sample songs data directly in endpoint for testing
+    // Sample songs with inline chord format - only the two requested songs
     const sampleSongs = [
       {
-        title: "Imagine",
-        artist: "John Lennon",
+        title: "Hey Jude",
+        artist: "The Beatles",
         language: "English",
-        lyrics: "Imagine there's no heaven\nIt's easy if you try\nNo hell below us\nAbove us only sky\nImagine all the people\nLiving for today...",
-        chords: "C Cmaj7 F\nC Cmaj7 F\nF Am Dm F\nG C E7 F",
-        year: 1971,
+        imageUrl: "https://upload.wikimedia.org/wikipedia/en/8/80/Hey_Jude_Single.jpg",
+        lyricsWithChords: [
+          [
+            {"lyrics": "Hey"},
+            {"lyrics": "Jude", "chords": "F"},
+            {"lyrics": "don't"},
+            {"lyrics": "make"},
+            {"lyrics": "it"},
+            {"lyrics": "bad", "chords": "C"}
+          ],
+          [
+            {"lyrics": "Take"},
+            {"lyrics": "a"},
+            {"lyrics": "sad", "chords": "C7"},
+            {"lyrics": "song", "chords": "C4/7"},
+            {"lyrics": "and"},
+            {"lyrics": "make"},
+            {"lyrics": "it"},
+            {"lyrics": "better", "chords": "F"}
+          ],
+          [
+            {"lyrics": "Remember", "chords": "Bb"},
+            {"lyrics": "to"},
+            {"lyrics": "let"},
+            {"lyrics": "her"},
+            {"lyrics": "into"},
+            {"lyrics": "your"},
+            {"lyrics": "heart", "chords": "F"}
+          ],
+          [
+            {"lyrics": "Then"},
+            {"lyrics": "you"},
+            {"lyrics": "can"},
+            {"lyrics": "start", "chords": "C"},
+            {"lyrics": "to"},
+            {"lyrics": "make", "chords": "C7"},
+            {"lyrics": "it"},
+            {"lyrics": "better", "chords": "F"}
+          ]
+        ],
+        year: 1968,
         genre: "Rock",
-        key: "C"
+        key: "F"
       },
       {
-        title: "Hotel California",
-        artist: "Eagles",
-        language: "English",
-        lyrics: "On a dark desert highway, cool wind in my hair\nWarm smell of colitas, rising up through the air\nUp ahead in the distance, I saw a shimmering light...",
-        chords: "Bm F# A E G D Em F#\nBm F# A E G D Em F#",
-        year: 1976,
-        genre: "Rock",
-        key: "Bm"
+        title: "ובלילות",
+        artist: "זמר עברי",
+        language: "Hebrew",
+        imageUrl: "https://via.placeholder.com/300x300?text=Hebrew+Song",
+        lyricsWithChords: [
+          [
+            {"lyrics": "ואיך"},
+            {"lyrics": "שלא", "chords": "Em"},
+            {"lyrics": "אפנה"},
+            {"lyrics": "לראות", "chords": "Em/D"}
+          ],
+          [
+            {"lyrics": "תמיד"},
+            {"lyrics": "איתה", "chords": "Cmaj7"},
+            {"lyrics": "ארצה"},
+            {"lyrics": "להיות", "chords": "G"}
+          ],
+          [
+            {"lyrics": "שומרת"},
+            {"lyrics": "לי", "chords": "Em"},
+            {"lyrics": "היא"},
+            {"lyrics": "אמונים", "chords": "Em/D"}
+          ],
+          [
+            {"lyrics": "לא"},
+            {"lyrics": "מתרוצצת", "chords": "Cmaj7"},
+            {"lyrics": "בגנים", "chords": "G"}
+          ],
+          [
+            {"lyrics": "ובלילות", "chords": "E"},
+            {"lyrics": "ובלילות", "chords": "Em/D"}
+          ],
+          [
+            {"lyrics": "עולות"},
+            {"lyrics": "עולות", "chords": "Cmaj7"},
+            {"lyrics": "בי"},
+            {"lyrics": "מנגינות", "chords": "G"}
+          ],
+          [
+            {"lyrics": "וזרם"},
+            {"lyrics": "דק", "chords": "E"},
+            {"lyrics": "קולח", "chords": "Em/D"}
+          ],
+          [
+            {"lyrics": "ותפילותי", "chords": "Cmaj7"},
+            {"lyrics": "לרוח"},
+            {"lyrics": "נענות", "chords": "G"}
+          ]
+        ],
+        year: 2020,
+        genre: "Hebrew Folk",
+        key: "Em"
       }
     ];
     
@@ -110,7 +191,7 @@ app.post('/api/seed', async (req, res) => {
         otherInstrument: 'Admin',
         isAdmin: true
       });
-      console.log('👑 Created admin user');
+      console.log('👑 Created admin user (username: admin, password: adminpassword)');
     } else {
       console.log('👑 Admin user already exists');
     }
@@ -124,9 +205,23 @@ app.post('/api/seed', async (req, res) => {
         instrument: 'guitar',
         isAdmin: false
       });
-      console.log('🎸 Created regular user');
+      console.log('🎸 Created regular user (username: user, password: password)');
     } else {
       console.log('🎸 Regular user already exists');
+    }
+    
+    // Create a vocalist user for testing
+    const vocalistExists = await User.findOne({ username: 'vocalist' });
+    if (!vocalistExists) {
+      await User.create({
+        username: 'vocalist',
+        password: 'password',
+        instrument: 'vocals',
+        isAdmin: false
+      });
+      console.log('🎤 Created vocalist user (username: vocalist, password: password)');
+    } else {
+      console.log('🎤 Vocalist user already exists');
     }
     
     const finalSongCount = await Song.countDocuments();
@@ -134,11 +229,21 @@ app.post('/api/seed', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Database seeded successfully!',
+      message: 'Database seeded successfully with inline chord format!',
       songsCreated: insertedSongs.length,
       totalSongs: finalSongCount,
       totalUsers: userCount,
-      songs: insertedSongs.map(song => ({ title: song.title, artist: song.artist }))
+      songs: insertedSongs.map(song => ({ 
+        title: song.title, 
+        artist: song.artist, 
+        language: song.language,
+        key: song.key
+      })),
+      users: [
+        { username: 'admin', password: 'adminpassword', role: 'admin' },
+        { username: 'user', password: 'password', role: 'guitarist' },
+        { username: 'vocalist', password: 'password', role: 'vocalist' }
+      ]
     });
     
   } catch (error) {
@@ -146,27 +251,7 @@ app.post('/api/seed', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message,
-      stack: error.stack 
-    });
-  }
-});
-
-// Also add a simple songs check endpoint
-app.get('/api/songs-check', async (req, res) => {
-  try {
-    const Song = require('./models/song.model');
-    const songs = await Song.find({}).select('title artist language');
-    const count = await Song.countDocuments();
-    
-    res.json({
-      success: true,
-      totalSongs: count,
-      songs: songs
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -176,7 +261,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
   
   // Handle React routing - return all requests to React app
-  app.get('/*path', (req, res) => {
+  app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
   });
 }
@@ -191,5 +276,7 @@ const io = setupSocket(server);
 // Start server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📝 Seed endpoint: POST http://localhost:${PORT}/api/seed`);
+  console.log(`🔍 Songs check: GET http://localhost:${PORT}/api/songs-check`);
 });

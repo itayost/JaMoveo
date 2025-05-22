@@ -1,4 +1,4 @@
-// client/src/pages/LivePage.js
+// client/src/pages/LivePage.js - Clean inline chord implementation
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -33,50 +33,36 @@ const LivePage = () => {
   useEffect(() => {
     if (!socket || !connected || !sessionId) return;
     
-    // Join session room
     socket.emit('join_session', sessionId);
     
-    // Listen for song_quit event
     const handleSongQuit = () => {
-      // Clear any active scrolling
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
         setAutoScroll(false);
       }
-      
-      // Navigate back to appropriate page
       navigate(user?.isAdmin ? '/admin' : '/player');
     };
     
-    // Register event listeners
     socket.on('song_quit', handleSongQuit);
     
-    // Cleanup listeners when component unmounts
     return () => {
-      // Clear any active scrolling
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
       }
-      
-      // Remove event listeners
       socket.off('song_quit', handleSongQuit);
-      
-      // Leave session
       socket.emit('leave_session');
     };
   }, [socket, connected, sessionId, user, navigate]);
 
-  // Toggle auto-scroll effect
+  // Auto-scroll effect
   useEffect(() => {
     if (autoScroll) {
-      // Start auto-scrolling
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy({
           top: 1 * scrollSpeed,
           behavior: 'auto'
         });
         
-        // Check if we've reached the bottom and should stop scrolling
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
         if (scrollTop + clientHeight >= scrollHeight - 20) {
           clearInterval(scrollIntervalRef.current);
@@ -84,14 +70,12 @@ const LivePage = () => {
         }
       }, 50);
     } else {
-      // Stop auto-scrolling
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
         scrollIntervalRef.current = null;
       }
     }
     
-    // Cleanup on unmount
     return () => {
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
@@ -99,36 +83,77 @@ const LivePage = () => {
     };
   }, [autoScroll, scrollSpeed]);
 
-  // Handle quit song (admin only)
+  /**
+   * Render a single line with inline chords
+   */
+  const renderLine = (line, lineIndex) => {
+    const isVocalist = user?.instrument === 'vocals';
+    
+    return (
+      <div key={lineIndex} className="mb-6 leading-relaxed">
+        <div className="flex flex-wrap items-end gap-1">
+          {line.map((word, wordIndex) => (
+            <div key={wordIndex} className="relative mb-2 min-h-[3rem]">
+              {!isVocalist && word.chords && (
+                <div className="absolute -top-7 left-0 text-yellow-300 font-mono text-lg font-bold whitespace-nowrap">
+                  {word.chords}
+                </div>
+              )}
+              
+              {/* Lyrics word */}
+              <span className="text-white text-2xl font-medium">
+                {word.lyrics}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Render song content with inline chords
+   */
+  const renderSongContent = () => {
+    if (!song.lyricsWithChords || !Array.isArray(song.lyricsWithChords)) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-xl text-red-400">Invalid song format</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 pb-32">
+        {song.lyricsWithChords.map((line, lineIndex) => renderLine(line, lineIndex))}
+      </div>
+    );
+  };
+
+  // Control handlers
   const handleQuitSong = () => {
     if (!sessionId) return;
     
-    // Stop any auto-scrolling
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current);
       setAutoScroll(false);
     }
     
-    // Emit socket event
     if (socket && connected) {
       socketQuitSong(sessionId);
     } else {
-      // Fallback when socket not connected
       navigate(user?.isAdmin ? '/admin' : '/player');
     }
   };
 
-  // Handle auto-scroll toggle
   const handleToggleAutoScroll = () => {
     setAutoScroll(!autoScroll);
   };
 
-  // Increase scroll speed
   const increaseSpeed = () => {
     setScrollSpeed(prev => Math.min(prev + 0.5, 5));
   };
 
-  // Decrease scroll speed
   const decreaseSpeed = () => {
     setScrollSpeed(prev => Math.max(prev - 0.5, 0.5));
   };
@@ -183,7 +208,6 @@ const LivePage = () => {
     );
   }
 
-  // Set appropriate text direction based on language
   const isHebrewSong = song.language === 'Hebrew';
 
   return (
@@ -193,9 +217,9 @@ const LivePage = () => {
       dir={isHebrewSong ? 'rtl' : 'ltr'}
     >
       {/* Song info header */}
-      <header className="sticky top-0 z-10 bg-black shadow-lg border-b border-gray-700 mb-6">
+      <header className="sticky top-0 z-10 bg-black shadow-lg border-b border-gray-700 mb-8">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-white mb-2 song-title">
+          <h1 className="text-4xl font-bold text-white mb-2 song-title">
             {song.title}
           </h1>
           <p className="text-2xl text-gray-300">
@@ -205,45 +229,13 @@ const LivePage = () => {
       </header>
 
       <main className="container mx-auto px-4">
-        {/* Role-based content rendering */}
-        {user?.instrument === 'vocals' ? (
-          // Vocalist view - lyrics only
-          <div>
-            <pre className="whitespace-pre-line text-2xl leading-relaxed pb-24">
-              {song.lyrics}
-            </pre>
-          </div>
-        ) : (
-          // Instrumentalist view - chords and lyrics
-          <div>
-            <div className="mb-10">
-              <h2 className="text-2xl mb-4 text-blue-300 font-semibold">
-                Chords
-              </h2>
-              <div className="bg-gray-900 p-6 rounded-lg overflow-x-auto shadow-inner">
-                <pre className="font-mono text-2xl text-yellow-300 leading-loose">
-                  {song.chords}
-                </pre>
-              </div>
-            </div>
-            
-            <div className="mb-24">
-              <h2 className="text-2xl mb-4 text-blue-300 font-semibold">
-                Lyrics
-              </h2>
-              <pre className="whitespace-pre-line text-2xl leading-relaxed">
-                {song.lyrics}
-              </pre>
-            </div>
-          </div>
-        )}
+        {renderSongContent()}
       </main>
 
       {/* Control panel */}
       <div className="fixed bottom-0 inset-x-0 py-5 px-6 bg-gray-900 shadow-lg border-t border-gray-700 z-20">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            {/* Auto-scroll controls */}
             <Button
               onClick={handleToggleAutoScroll}
               variant={autoScroll ? 'primary' : 'secondary'}
@@ -253,7 +245,6 @@ const LivePage = () => {
               {autoScroll ? 'Stop Auto-Scroll' : 'Auto-Scroll'}
             </Button>
             
-            {/* Speed controls - only show when auto-scroll is active */}
             {autoScroll && (
               <div className="flex items-center space-x-3">
                 <button 
@@ -275,7 +266,6 @@ const LivePage = () => {
             )}
           </div>
           
-          {/* Admin-only quit button */}
           {user?.isAdmin && (
             <Button
               onClick={handleQuitSong}
